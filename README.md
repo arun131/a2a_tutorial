@@ -38,4 +38,4 @@ Use **Add a sighting** in the app, or edit `src/data/visits.ts` and open a pull 
 
 ## Map drawing
 
-`public/india-states.json` is a heavily simplified state outline derived from [geohacker/india](https://github.com/geohacker/india). Andaman & Nicobar and Lakshadweep are left off so the mainland and the Northeast can share one plate. The file uses older names (Orissa, Uttaranchal) and does not split Telangana from Andhra Pradesh; pins use latitude and longitude, not those polygons.
+`public/india-states.json` follows the official map of India as recognised by the Government of India / Survey of India (Jammu & Kashmir and Ladakh in full official extent; Lakshadweep and the Andaman & Nicobar Islands as insets). Source geometry: [india-official-geojson](https://github.com/AbhinavSwami28/india-official-geojson). Pins use latitude and longitude, not the polygons.

@@ -65,6 +65,16 @@ export function AboutRecord() {
         sarpanch talking to PTI. That is not the same as a second audit.
       </p>
 
+      <h3 className="serif">The map</h3>
+      <p>
+        The plate uses the official map of India as recognised by the
+        Government of India and the Survey of India — including the full
+        official extent of Jammu & Kashmir and Ladakh, and inset plates for
+        Lakshadweep and the Andaman & Nicobar Islands. It is not a
+        Line-of-Control cut-off map. Pins still sit on village or district
+        approximations from the reports.
+      </p>
+
       <h3 className="serif">BBC schools in Faridabad</h3>
       <p>
         Three campuses in Khedi Kalan and Atmadpur come from BBC field
