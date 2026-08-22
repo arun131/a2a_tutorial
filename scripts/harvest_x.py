@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-"""Harvest public School Thik Karo posts from X via search + fxtwitter.
+"""Harvest public School Thik Karo posts from X.
 
-Does not invent tweets. Writes whatever unique status IDs it can prove.
-Target requested by the field map: 600 posts. Actual count is whatever
-search and snowballing return.
+Writes incrementally. Target is 600 proven posts — never invented.
 """
 
 from __future__ import annotations
@@ -14,87 +12,61 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "data" / "x-harvest"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-UA = "SchoolThikKaroFieldMap/0.1 (+https://github.com/arun131/a2a_tutorial; civic archive)"
+UA = "SchoolThikKaroFieldMap/0.2 (+https://github.com/arun131/a2a_tutorial; civic archive)"
 STATUS_RE = re.compile(
     r"(?:https?://(?:www\.)?(?:x|twitter)\.com/|/)?([A-Za-z0-9_]+)/status(?:es)?/(\d{5,})"
 )
-ID_RE = re.compile(r"/status(?:es)?/(\d{5,})")
 
 SEED_IDS = {
-    "2088531713156903305",
-    "2088811021456593279",
-    "2088046771515625741",
-    "2088811151190856017",
-    "2088565905123106989",
-    "2088063887791051062",
-    "2088540563918508247",
+    "2088531713156903305": "abhijeet_dipke",
+    "2088811021456593279": "Schoolthikkaro",
+    "2088046771515625741": "SchoolThikKaro_",
+    "2088811151190856017": "Schoolthikkaro",
+    "2088565905123106989": "SchoolThikKaro_",
+    "2088063887791051062": "Schoolthikkaro",
+    "2088540563918508247": "AskAmbedkar",
 }
 
-ACCOUNTS = [
+# AskAmbedkar is only a seed, not a full-timeline scrape.
+PRIORITY_ACCOUNTS = [
     "Cockroachisback",
     "abhijeet_dipke",
     "SchoolThikKaro_",
-    "Schoolthikkaro",
-    "SchoolThikKaroo",
-    "SchoolThikKroJP",
-    "AskAmbedkar",
 ]
 
 SEARCH_QUERIES = [
     "site:x.com SchoolThikKaro",
-    "site:twitter.com SchoolThikKaro",
-    "site:x.com #SchoolThikKaro",
-    "site:x.com from:Cockroachisback School",
+    "site:twitter.com #SchoolThikKaro",
+    "site:x.com from:Cockroachisback school",
     "site:x.com from:abhijeet_dipke SchoolThikKaro",
-    "site:x.com from:SchoolThikKaro_",
-    "site:x.com Cockroachisback school",
-    "site:x.com abhijeet_dipke ZP school",
     "site:x.com \"School Thik Karo\"",
     "site:x.com \"स्कूल ठीक करो\"",
-    "site:x.com Cockroach Janta Party school audit",
     "site:x.com Santuk Pimpri school",
-    "site:x.com Hingoli ZP school Dipke",
-    "site:x.com Limbala Makta school",
-    "site:x.com Ausa Ujani school",
-    "site:x.com \"Zilla Parishad\" Cockroach",
-    "SchoolThikKaro x.com",
-    "SchoolThikKaro twitter",
-    '"School Thik Karo" site:x.com village',
-    '"School Thik Karo" site:x.com district',
-    "Cockroachisback status school",
-    "abhijeet_dipke status SchoolThikKaro",
-]
-
-NEWS_URLS = [
-    "https://timesofindia.indiatimes.com/city/aurangabad/school-thik-karo-abhijeet-dipkes-1st-school-audit-flags-lack-of-basic-amenities-in-hingoli-govt-school-watch/articleshow/133257562.cms",
-    "https://news.careers360.com/cjp-school-thik-karo-1500-audit-govt-schools-find-neglect-toilets-teacher-infra-shortage-maharashtra-up-mp-assam-jharkhand-bihar",
-    "https://www.hindustantimes.com/india-news/windows-cctv-being-replaced-repair-work-begins-at-school-in-abhijeet-dipkes-village-amid-school-thik-karo-campaign-101786981688624.html",
+    "site:x.com Hingoli Dipke school",
+    "site:x.com \"Zilla Parishad\" SchoolThikKaro",
+    "SchoolThikKaro twitter.com",
 ]
 
 
-def fetch(url: str, timeout: int = 25, data: bytes | None = None) -> tuple[int, str]:
+def fetch(url: str, timeout: int = 10, data: bytes | None = None) -> tuple[int, str]:
     req = urllib.request.Request(
         url,
         data=data,
-        headers={
-            "User-Agent": UA,
-            "Accept": "text/html,application/json,*/*",
-        },
+        headers={"User-Agent": UA, "Accept": "text/html,application/json,*/*"},
         method="POST" if data else "GET",
     )
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
-            body = resp.read().decode("utf-8", "replace")
-            return resp.status, body
+            return resp.status, resp.read().decode("utf-8", "replace")
     except urllib.error.HTTPError as exc:
-        body = exc.read().decode("utf-8", "replace")
-        return exc.code, body
+        return exc.code, exc.read().decode("utf-8", "replace")
     except Exception as exc:
         return 0, str(exc)
 
@@ -122,23 +94,11 @@ def extract_statuses(text: str, via: str, found: dict[str, dict]) -> int:
 
 def ddg_search(query: str) -> str:
     data = urllib.parse.urlencode({"q": query}).encode()
-    _, body = fetch("https://html.duckduckgo.com/html/", data=data)
+    _, body = fetch("https://html.duckduckgo.com/html/", data=data, timeout=15)
     return body
 
 
-def bing_search(query: str) -> str:
-    url = "https://www.bing.com/search?" + urllib.parse.urlencode({"q": query, "count": 50})
-    _, body = fetch(url)
-    return body
-
-
-def brave_search(query: str) -> str:
-    url = "https://search.brave.com/search?" + urllib.parse.urlencode({"q": query})
-    _, body = fetch(url)
-    return body
-
-
-def wayback_cdx(account: str) -> str:
+def wayback_cdx(account: str, limit: int = 400) -> str:
     parts = []
     for host in ("x.com", "twitter.com"):
         url = (
@@ -149,20 +109,21 @@ def wayback_cdx(account: str) -> str:
                     "output": "json",
                     "fl": "original",
                     "collapse": "urlkey",
-                    "limit": 400,
+                    "limit": limit,
                     "filter": "statuscode:200",
+                    "from": "20260801",
                 }
             )
         )
-        _, body = fetch(url, timeout=40)
+        _, body = fetch(url, timeout=25)
         parts.append(body)
     return "\n".join(parts)
 
 
 def fx_tweet(user: str, status_id: str) -> dict | None:
-    for host in ("api.fxtwitter.com", "api.vxtwitter.com"):
-        url = f"https://{host}/{user}/status/{status_id}"
-        code, body = fetch(url, timeout=20)
+    for handle in (user if user not in ("", "unknown") else "i", "i"):
+        url = f"https://api.fxtwitter.com/{handle}/status/{status_id}"
+        code, body = fetch(url, timeout=8)
         if code != 200:
             continue
         try:
@@ -175,161 +136,123 @@ def fx_tweet(user: str, status_id: str) -> dict | None:
     return None
 
 
-def fx_profile(user: str) -> dict | None:
-    code, body = fetch(f"https://api.fxtwitter.com/{user}", timeout=15)
-    if code != 200:
-        return None
-    try:
-        return json.loads(body)
-    except json.JSONDecodeError:
-        return None
+def load_existing() -> dict[str, dict]:
+    path = OUT_DIR / "tweets.jsonl"
+    rows: dict[str, dict] = {}
+    if not path.exists():
+        return rows
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        rows[str(row["id"])] = row
+    return rows
 
 
-def snowball_from_tweet(tweet: dict, found: dict[str, dict]) -> None:
-    blob = json.dumps(tweet, ensure_ascii=False)
-    extract_statuses(blob, "snowball", found)
-    for key in ("replying_to_status", "in_reply_to_status_id_str", "quoted_tweet"):
-        val = tweet.get(key)
-        if isinstance(val, dict):
-            tid = str(val.get("id") or val.get("id_str") or "")
-            user = val.get("author", {}).get("screen_name") if isinstance(val.get("author"), dict) else val.get("screen_name")
-            if tid:
-                add_status(found, user or "unknown", tid, "quoted")
-        elif val:
-            add_status(found, tweet.get("author", {}).get("screen_name") or "unknown", str(val), "reply")
+def append_tweet(row: dict) -> None:
+    with (OUT_DIR / "tweets.jsonl").open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
-def main() -> None:
+def slim_row(rec: dict, tweet: dict) -> dict:
+    user = (
+        (tweet.get("author") or {}).get("screen_name")
+        or tweet.get("user_screen_name")
+        or rec.get("user")
+        or "unknown"
+    )
+    return {
+        "id": rec["id"],
+        "user": user,
+        "url": f"https://x.com/{user}/status/{rec['id']}",
+        "created_at": tweet.get("created_at") or tweet.get("date"),
+        "text": tweet.get("text") or tweet.get("full_text") or "",
+        "via": rec.get("via"),
+        "media": tweet.get("media"),
+    }
+
+
+def collect_ids() -> dict[str, dict]:
     found: dict[str, dict] = {}
-    for status_id in SEED_IDS:
-        add_status(found, "unknown", status_id, "seed")
+    for status_id, user in SEED_IDS.items():
+        add_status(found, user, status_id, "seed")
 
-    profiles = {}
-    for account in ACCOUNTS:
-        profile = fx_profile(account)
-        profiles[account] = {
-            "ok": bool(profile),
-            "tweets": (profile or {}).get("user", {}).get("tweets") if profile else None,
-            "media_count": (profile or {}).get("user", {}).get("media_count") if profile else None,
-            "followers": (profile or {}).get("user", {}).get("followers") if profile else None,
-        }
-        print(f"profile {account}: {profiles[account]}", flush=True)
-        time.sleep(0.3)
-
-    for account in ACCOUNTS:
+    for account in PRIORITY_ACCOUNTS:
         print(f"wayback {account}", flush=True)
-        body = wayback_cdx(account)
-        n = extract_statuses(body, f"wayback:{account}", found)
+        n = extract_statuses(wayback_cdx(account), f"wayback:{account}", found)
         print(f"  +{n} total={len(found)}", flush=True)
-        time.sleep(0.6)
 
     for query in SEARCH_QUERIES:
         print(f"ddg {query}", flush=True)
         n = extract_statuses(ddg_search(query), f"ddg:{query}", found)
         print(f"  +{n} total={len(found)}", flush=True)
-        time.sleep(0.8)
-        print(f"bing {query}", flush=True)
-        n = extract_statuses(bing_search(query), f"bing:{query}", found)
-        print(f"  +{n} total={len(found)}", flush=True)
-        time.sleep(0.8)
+        time.sleep(0.4)
 
-    for url in NEWS_URLS:
-        print(f"news {url}", flush=True)
-        _, body = fetch(url)
-        n = extract_statuses(body, f"news:{url}", found)
-        print(f"  +{n} total={len(found)}", flush=True)
+    (OUT_DIR / "ids.json").write_text(
+        json.dumps({"count": len(found), "ids": found}, indent=2),
+        encoding="utf-8",
+    )
+    return found
 
-    tweets_path = OUT_DIR / "tweets.jsonl"
-    index_path = OUT_DIR / "index.json"
-    fetched: list[dict] = []
-    fetched_ids = set()
 
-    # Fetch newest-looking (larger snowflake) first
-    ordered = sorted(found.values(), key=lambda r: int(r["id"]), reverse=True)
-    print(f"fetching {len(ordered)} unique status ids via fxtwitter", flush=True)
+def fetch_all(found: dict[str, dict]) -> None:
+    existing = load_existing()
+    todo = [rec for rec in found.values() if rec["id"] not in existing]
+    print(f"already have {len(existing)}; fetching {len(todo)}", flush=True)
+    fetched = len(existing)
+    misses = 0
 
-    for rec in ordered:
-        if rec["id"] in fetched_ids:
-            continue
-        tweet = fx_tweet(rec["user"] if rec["user"] != "unknown" else "i", rec["id"])
-        if tweet is None and rec["user"] != "unknown":
-            tweet = fx_tweet("i", rec["id"])
-        if tweet is None:
-            rec["fetch"] = "miss"
-            continue
-        rec["fetch"] = "ok"
-        rec["user"] = (
-            (tweet.get("author") or {}).get("screen_name")
-            or tweet.get("user_screen_name")
-            or rec["user"]
-        )
-        rec["url"] = f"https://x.com/{rec['user']}/status/{rec['id']}"
-        rec["text"] = tweet.get("text") or tweet.get("full_text") or ""
-        rec["created_at"] = tweet.get("created_at") or tweet.get("date")
-        rec["raw"] = tweet
-        fetched.append(rec)
-        fetched_ids.add(rec["id"])
-        snowball_from_tweet(tweet, found)
-        if len(fetched) % 10 == 0:
-            print(f"  fetched {len(fetched)} / known {len(found)}", flush=True)
-        time.sleep(0.25)
+    def work(rec: dict) -> tuple[dict, dict | None]:
+        return rec, fx_tweet(rec["user"], rec["id"])
 
-    # Second pass for IDs discovered during snowball
-    extra = [r for r in found.values() if r["id"] not in fetched_ids]
-    extra.sort(key=lambda r: int(r["id"]), reverse=True)
-    print(f"snowball pass {len(extra)} leftover ids", flush=True)
-    for rec in extra:
-        tweet = fx_tweet(rec["user"] if rec["user"] != "unknown" else "i", rec["id"])
-        if tweet is None:
-            rec["fetch"] = rec.get("fetch") or "miss"
-            continue
-        rec["fetch"] = "ok"
-        rec["user"] = (
-            (tweet.get("author") or {}).get("screen_name")
-            or tweet.get("user_screen_name")
-            or rec["user"]
-        )
-        rec["url"] = f"https://x.com/{rec['user']}/status/{rec['id']}"
-        rec["text"] = tweet.get("text") or tweet.get("full_text") or ""
-        rec["created_at"] = tweet.get("created_at") or tweet.get("date")
-        rec["raw"] = tweet
-        fetched.append(rec)
-        fetched_ids.add(rec["id"])
-        time.sleep(0.25)
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        futures = [pool.submit(work, rec) for rec in todo]
+        for fut in as_completed(futures):
+            rec, tweet = fut.result()
+            if tweet is None:
+                misses += 1
+                continue
+            row = slim_row(rec, tweet)
+            append_tweet(row)
+            existing[row["id"]] = row
+            fetched += 1
+            extract_statuses(json.dumps(tweet), "snowball", found)
+            if fetched % 25 == 0:
+                print(f"  fetched {fetched} misses {misses} known {len(found)}", flush=True)
 
-    slim = []
-    with tweets_path.open("w", encoding="utf-8") as fh:
-        for rec in fetched:
-            row = {
-                "id": rec["id"],
-                "user": rec["user"],
-                "url": rec["url"],
-                "created_at": rec.get("created_at"),
-                "text": rec.get("text"),
-                "via": rec.get("via"),
-                "quote_count": (rec.get("raw") or {}).get("quote_count"),
-                "reply_count": (rec.get("raw") or {}).get("replies"),
-                "media": (rec.get("raw") or {}).get("media"),
-            }
-            slim.append(row)
-            fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+    # One snowball pass for new ids
+    extra = [rec for rec in found.values() if rec["id"] not in existing]
+    print(f"snowball leftover {len(extra)}", flush=True)
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        futures = [pool.submit(work, rec) for rec in extra]
+        for fut in as_completed(futures):
+            rec, tweet = fut.result()
+            if tweet is None:
+                misses += 1
+                continue
+            row = slim_row(rec, tweet)
+            append_tweet(row)
+            existing[row["id"]] = row
+            fetched += 1
 
     summary = {
         "compiledOn": time.strftime("%Y-%m-%d"),
         "requested": 600,
         "uniqueIdsSeen": len(found),
-        "fetched": len(fetched),
-        "missed": sum(1 for r in found.values() if r.get("fetch") != "ok"),
-        "profiles": profiles,
-        "accounts": ACCOUNTS,
+        "fetched": len(existing),
+        "missesThisRun": misses,
         "note": (
             "600 is the harvest target, not a number to invent. "
-            "This file is only posts we could prove from public search, Wayback, or fxtwitter."
+            "tweets.jsonl is only posts fxtwitter actually returned."
         ),
     }
-    index_path.write_text(json.dumps({"summary": summary, "ids": list(found.values())}, indent=2, default=str), encoding="utf-8")
     (OUT_DIR / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     print(json.dumps(summary, indent=2), flush=True)
+
+
+def main() -> None:
+    found = collect_ids()
+    fetch_all(found)
 
 
 if __name__ == "__main__":

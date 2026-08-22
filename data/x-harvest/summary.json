@@ -1,0 +1,11 @@
+{
+  "compiledOn": "2026-08-22",
+  "requested": 600,
+  "fetched": 89,
+  "campaignPosts": 59,
+  "withPlace": 13,
+  "noVillage": 46,
+  "skippedUnrelated": 30,
+  "note": "600 is the harvest target. Rows were not invented. Public search + fxtwitter proved these posts; timelines are not listable without X API.",
+  "blockedWithout": "X_BEARER_TOKEN"
+}

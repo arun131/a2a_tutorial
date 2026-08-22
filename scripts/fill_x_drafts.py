@@ -59,16 +59,12 @@ NO_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
 DISTRICTS = {
     "Hingoli": "Maharashtra",
     "Latur": "Maharashtra",
-    "Ausa": "Maharashtra",
     "Solapur": "Maharashtra",
-    "Pune": "Maharashtra",
-    "Nagpur": "Maharashtra",
-    "Nashik": "Maharashtra",
-    "Raigad": "Maharashtra",
     "Chhatrapati Sambhajinagar": "Maharashtra",
-    "Aurangabad": "Maharashtra",
+    "Raigad": "Maharashtra",
     "Meerut": "Uttar Pradesh",
     "Siddharthnagar": "Uttar Pradesh",
+    "Pratapgarh": "Uttar Pradesh",
     "Morena": "Madhya Pradesh",
     "Balaghat": "Madhya Pradesh",
     "Pakur": "Jharkhand",
@@ -81,22 +77,49 @@ DISTRICTS = {
     "Bengaluru": "Karnataka",
 }
 
-VILLAGE_RE = re.compile(
-    r"(?:village|गाव|गाँव|zp(?:\s+school)?(?:\s+at)?)\s+([A-Z][A-Za-z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+)?)",
-    re.I,
-)
 NAMED_VILLAGES = {
     "Santuk Pimpri": ("Hingoli", "Maharashtra"),
     "Limbala Makta": ("Hingoli", "Maharashtra"),
     "Dhegaj": ("Hingoli", "Maharashtra"),
     "Ujani": ("Latur", "Maharashtra"),
     "Ekambi": ("Latur", "Maharashtra"),
+    "Donwada Yelthi": ("Chhatrapati Sambhajinagar", "Maharashtra"),
     "Kondivade": ("Raigad", "Maharashtra"),
     "Masina Khas": ("Siddharthnagar", "Uttar Pradesh"),
+    "Kadipur": ("Pratapgarh", "Uttar Pradesh"),
     "Patharwada": ("Balaghat", "Madhya Pradesh"),
     "Rampura Kanwarpura": ("Jaipur", "Rajasthan"),
+    "Rampura": ("Jaipur", "Rajasthan"),
+    "Kanwarpura": ("Jaipur", "Rajasthan"),
+    "Bagru": ("Jaipur", "Rajasthan"),
     "Khedi Kalan": ("Faridabad", "Haryana"),
     "Atmadpur": ("Faridabad", "Haryana"),
+}
+
+VILLAGE_RE = re.compile(
+    r"(?:in|at|from)\s+([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+)?)\s+village",
+    re.I,
+)
+VILLAGE_STOP = {
+    "kids",
+    "still",
+    "primary",
+    "government",
+    "govt",
+    "school",
+    "zilla",
+    "parishad",
+    "native",
+    "his",
+    "her",
+    "the",
+    "this",
+    "that",
+    "our",
+    "your",
+    "their",
+    "a",
+    "an",
 }
 
 
@@ -105,9 +128,11 @@ def empty_answers() -> dict[str, str]:
 
 
 def is_campaign(text: str, user: str) -> bool:
-    if user.lower() in {"cockroachisback", "abhijeet_dipke", "schoolthikkaro_"}:
-        return bool(CAMPAIGN_RE.search(text or "")) or "school" in (text or "").lower()
-    return bool(CAMPAIGN_RE.search(text or ""))
+    blob = text or ""
+    if re.search(r"strategy meet|recruitment exam|JPSC|JSSC|MMRDA|degree", blob, re.I):
+        if not re.search(r"school thik karo|स्कूल ठीक|#SchoolThikKaro|govt school|government school", blob, re.I):
+            return False
+    return bool(CAMPAIGN_RE.search(blob))
 
 
 def place_of(text: str) -> tuple[str | None, str | None, str | None]:
@@ -119,10 +144,14 @@ def place_of(text: str) -> tuple[str | None, str | None, str | None]:
         if re.search(rf"\b{re.escape(district)}\b", blob, re.I):
             village_match = VILLAGE_RE.search(blob)
             village = village_match.group(1).strip() if village_match else None
+            if village and village.lower() in VILLAGE_STOP:
+                village = None
             return village, district, state
     village_match = VILLAGE_RE.search(blob)
     if village_match:
-        return village_match.group(1).strip(), None, None
+        village = village_match.group(1).strip()
+        if village.lower() not in VILLAGE_STOP and "school" not in village.lower():
+            return village, None, None
     return None, None, None
 
 
@@ -193,7 +222,9 @@ def main() -> None:
                     "boxes left blank. Not a pin."
                 ),
                 "proofUrls": [row.get("url")],
-                "source": row,
+                "sourceId": row.get("id"),
+                "sourceUser": user,
+                "sourceCreatedAt": row.get("created_at"),
             }
         )
     summary = {
