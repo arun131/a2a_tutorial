@@ -452,13 +452,46 @@ h3,
   vertical-align: top;
 }
 
-.checklist .problem {
+.checklist .no {
   color: var(--critical);
   font-weight: 700;
 }
 
+.checklist .yes {
+  color: var(--repair);
+  font-weight: 600;
+}
+
+.checklist .na,
 .checklist .not_mentioned {
   color: var(--ink-faint);
+}
+
+.checklist .section-row td {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  padding-top: 0.85rem;
+  border-bottom: 1px solid var(--rule-strong);
+}
+
+.identity-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem 1rem;
+  margin: 0 0 1rem;
+}
+
+.identity-grid dt {
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.identity-grid dd {
+  margin: 0.1rem 0 0;
 }
 
 .prose-list {

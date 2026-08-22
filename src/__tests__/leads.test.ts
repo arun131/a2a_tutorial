@@ -31,20 +31,25 @@ describe("draftToVisit", () => {
       {
         schoolName: "Test",
         schoolNameKnown: true,
+        udiseCode: "",
         village: "A",
+        gramPanchayat: "",
         district: "B",
         state: "C",
+        classesCovered: "",
         observedOn: "2026-08-20",
+        timeOfVisit: "",
         visitor: "Me",
         summary: "Toilets locked.",
         sourceUrl: "https://example.com/post",
         sourceTitle: "Post",
-        checklist: { ...emptyChecklist(), toilets: "problem" },
+        answers: { ...emptyChecklist(), q2_toilets: "no" },
       },
       0,
     );
     expect(visit.recordKind).toBe("local_lead");
     expect(visit.lat).toBe(0);
     expect(visit.unknowns.some((line) => /not sit on the map/i.test(line))).toBe(true);
+    expect(visit.answers.q2_toilets).toBe("no");
   });
 });

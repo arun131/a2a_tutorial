@@ -7,7 +7,7 @@ import {
   validateDraft,
   type LeadDraft,
 } from "../lib/leads";
-import type { CategoryStatus, Visit } from "../types";
+import type { FormAnswer, Visit } from "../types";
 
 export function SubmitLead({
   leads,
@@ -71,6 +71,20 @@ export function SubmitLead({
           />
         </label>
         <label>
+          Gram panchayat (if known)
+          <input
+            value={draft.gramPanchayat}
+            onChange={(event) => update("gramPanchayat", event.target.value)}
+          />
+        </label>
+        <label>
+          UDISE code (if known)
+          <input
+            value={draft.udiseCode}
+            onChange={(event) => update("udiseCode", event.target.value)}
+          />
+        </label>
+        <label>
           District
           <input
             value={draft.district}
@@ -87,6 +101,14 @@ export function SubmitLead({
           />
         </label>
         <label>
+          Classes covered
+          <input
+            value={draft.classesCovered}
+            onChange={(event) => update("classesCovered", event.target.value)}
+            placeholder="1-5, 1-8…"
+          />
+        </label>
+        <label>
           Date of visit or post
           <input
             type="date"
@@ -95,7 +117,15 @@ export function SubmitLead({
           />
         </label>
         <label>
-          Who visited or filmed
+          Time of visit
+          <input
+            value={draft.timeOfVisit}
+            onChange={(event) => update("timeOfVisit", event.target.value)}
+            placeholder="AM / PM"
+          />
+        </label>
+        <label>
+          Surveyor / parent name
           <input
             value={draft.visitor}
             onChange={(event) => update("visitor", event.target.value)}
@@ -103,7 +133,9 @@ export function SubmitLead({
           />
         </label>
         <fieldset className="check-grid">
-          <legend className="serif">Checklist — only mark what the source showed</legend>
+          <legend className="serif">
+            Official 10-point form — only mark what the source showed
+          </legend>
           {CHECKLIST_KEYS.map((key) => (
             <label className="check-row" key={key}>
               <span>
@@ -111,17 +143,18 @@ export function SubmitLead({
                 <div className="meta-line">{CHECKLIST_HINTS[key]}</div>
               </span>
               <select
-                value={draft.checklist[key]}
+                value={draft.answers[key]}
                 onChange={(event) =>
-                  update("checklist", {
-                    ...draft.checklist,
-                    [key]: event.target.value as CategoryStatus,
+                  update("answers", {
+                    ...draft.answers,
+                    [key]: event.target.value as FormAnswer,
                   })
                 }
               >
                 <option value="not_mentioned">Not mentioned</option>
-                <option value="problem">Flagged as a problem</option>
-                <option value="reported_ok">Reported as all right</option>
+                <option value="yes">YES</option>
+                <option value="no">NO</option>
+                <option value="na">N/A</option>
               </select>
             </label>
           ))}

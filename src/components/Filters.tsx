@@ -65,7 +65,7 @@ export function Filters({
         <option value="">Any flagged category</option>
         {CHECKLIST_KEYS.map((key) => (
           <option key={key} value={key}>
-            {CHECKLIST_LABELS[key]} flagged
+            {CHECKLIST_LABELS[key]} marked NO
           </option>
         ))}
       </select>

@@ -30,8 +30,9 @@ export function Masthead({
         <h1>A map of what the visits found</h1>
         <p>
           {mappedCount} schools placed from public reports — not the 1,200–1,500
-          audits CJP says arrived in the first week. Pins mark neglect that was
-          named with a place. Silence on a checklist item is left blank.
+          audits CJP says arrived in the first week. Each dossier uses the
+          official 20-question 10-point survey form. Silence on a box is left
+          blank, not marked YES.
         </p>
       </div>
       <nav className="nav" aria-label="Record sections">

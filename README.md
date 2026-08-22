@@ -12,7 +12,8 @@ It is **not** an official CJP product. CJP has said 1,200–1,500 people joined 
 - Village / block / district / state
 - Approximate coordinates, with the precision labelled
 - A plain-language summary
-- Checklist categories marked **problem**, **not mentioned**, or **reported as all right** — silence is never treated as a pass
+- The official CJP 10-point / 20-question survey form (YES / NO / N/A). Silence stays **not mentioned** — it is never treated as a pass
+- Place identification from page 1 of that form: school, UDISE, village, gram panchayat, district, classes, students, teachers
 - A link back to the article or post
 
 ## Run it
@@ -34,7 +35,9 @@ A static copy of the last build lives in `docs/` so it can be opened from a CDN 
 
 ## Add a sighting
 
-Use **Add a sighting** in the app, or edit `src/data/visits.ts` and open a pull request. Do not invent a school name, a coordinate tighter than the source supports, or a checklist problem the source did not state.
+Use **Add a sighting** in the app, or edit `src/data/visits.ts` and open a pull request. Do not invent a school name, a coordinate tighter than the source supports, or mark a form box the source did not show.
+
+X harvest lives in `data/x-harvest/`. `scripts/harvest_x.py` pulls public posts. Drafts are only filled where a village or district is in the post. The harvest target is 600 posts — that number is not invented if search returns fewer.
 
 ## Map drawing
 

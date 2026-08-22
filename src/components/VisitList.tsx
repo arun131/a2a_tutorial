@@ -1,4 +1,4 @@
-import { CHECKLIST_LABELS, flaggedProblems } from "../data/checklist";
+import { SHORT_LABELS, flaggedProblems } from "../data/checklist";
 import { formatObservedOn, formatShortPlace } from "../lib/format";
 import { SEVERITY_LABELS, severityOf } from "../lib/severity";
 import type { Visit } from "../types";
@@ -24,7 +24,7 @@ export function VisitList({
     <div className="visit-list" role="list">
       {visits.map((visit, index) => {
         const severity = severityOf(visit);
-        const problems = flaggedProblems(visit.checklist);
+        const problems = flaggedProblems(visit.answers);
         const selected = visit.id === selectedId;
         return (
           <button
@@ -46,8 +46,8 @@ export function VisitList({
             <p className="meta-line">
               {formatObservedOn(visit.observedOn, visit.datePrecision)}
               {problems.length > 0
-                ? ` · ${problems.map((key) => CHECKLIST_LABELS[key]).join(", ")}`
-                : " · Checklist not published"}
+                ? ` · ${problems.map((key) => SHORT_LABELS[key]).join(", ")}`
+                : " · Form not filled"}
               {visit.followUp === "repairs_claimed" ? " · Repair claimed" : ""}
               {visit.recordKind === "local_lead" ? " · Local sighting" : ""}
             </p>

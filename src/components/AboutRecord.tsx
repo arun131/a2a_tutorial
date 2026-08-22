@@ -4,10 +4,11 @@ export function AboutRecord() {
       <h2>How this record was made</h2>
       <p className="lede">
         Cockroach Janta Party launched School Thik Karo on 15 August 2026 from
-        Santuk Pimpri in Hingoli. Volunteers visit government schools, film a
-        basic checklist, and post the evidence. Those posts are scattered.
-        This page gathers the visits that public reporting has already named
-        with a place, and leaves the rest off the map on purpose.
+        Santuk Pimpri in Hingoli. Volunteers fill the party’s government-school
+        survey — the 10-point / 20-question form on page 1 of their field
+        sheet, including place identification — and post evidence. Those posts
+        are scattered. This page gathers the visits that public reporting has
+        already named with a place, and leaves the rest off the map on purpose.
       </p>
 
       <div className="note-box">
@@ -31,9 +32,9 @@ export function AboutRecord() {
           A plain-language summary of what that source said, with the link back.
         </li>
         <li>
-          Checklist boxes marked <em>problem</em> only when the source said so.
-          If the article is silent, the box stays <em>not mentioned</em>. Those
-          two states are never treated as the same.
+          Official-form boxes marked YES / NO / N/A only when the source said
+          so. If the article or post is silent, the box stays{" "}
+          <em>not mentioned</em>. Silence is never treated as a pass.
         </li>
         <li>
           Coordinates at village, block, district, or city approximation — never
@@ -57,12 +58,13 @@ export function AboutRecord() {
       <p>
         Colour is a reading aid, not a government grade. Critical means a
         source described collapse risk, a toilet locked since the building went
-        up, classes under tarpaulin or in a livestock shed, or a similar
-        structural failure. Serious means safety was flagged, or three or more
-        checklist items were. Notable means at least one item was flagged.
-        Incomplete means the visit was blocked or the findings were not
-        published. A green ring means someone claimed a repair — usually a
-        sarpanch talking to PTI. That is not the same as a second audit.
+        up, classes under tarpaulin or in a livestock shed, or the form was
+        marked URGENT ACTION. Serious means Q4/Q15 was marked NO, three or more
+        official-form items were marked NO, or the form said SERIOUS CONCERN.
+        Notable means at least one item was marked NO. Incomplete means the
+        visit was blocked or the findings were not published. A green ring
+        means someone claimed a repair — usually a sarpanch talking to PTI.
+        That is not the same as a second audit.
       </p>
 
       <h3 className="serif">The map</h3>
@@ -81,6 +83,27 @@ export function AboutRecord() {
         reporting on the campaign, not from a CJP volunteer form. They are
         labelled as news field reports so they are not confused with citizen
         audits.
+      </p>
+
+      <h3 className="serif">The official form</h3>
+      <p>
+        Page 1 of CJP’s field sheet is the government-school survey: date and
+        time of visit, school name, UDISE, surveyor, village, gram panchayat,
+        district, classes, student and teacher counts, then twenty YES / NO /
+        N/A questions, three top concerns, an overall mark, and a photo box.
+        That is the locked format used here. Page 2 is the code of conduct —
+        observe, do not fight, do not post the findings yourself; they go
+        through CJP first.
+      </p>
+
+      <h3 className="serif">X harvest</h3>
+      <p>
+        The first public net is X: @Cockroachisback, @abhijeet_dipke, and
+        #SchoolThikKaro. The harvest script writes every post it can prove into{" "}
+        <code>data/x-harvest/</code>. The target is 600 posts. That number is
+        not invented if search returns fewer. A draft 10-point form is filled
+        only when the post names a village or district. Unmentioned questions
+        stay blank. Drafts are not pins until someone accepts them.
       </p>
 
       <h3 className="serif">How to add what we missed</h3>

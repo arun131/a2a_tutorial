@@ -1,14 +1,52 @@
-import { withChecks } from "./checklist";
+import { withAnswers } from "./checklist";
 import type { Visit } from "../types";
 
 /**
  * Only visits that can be placed from public reporting.
  * CJP has said 1,200–1,500 people joined the first wave of audits.
  * This file is the much smaller set that newsrooms named with a place.
+ * Checklist answers follow the official 20-question 10-point form.
  */
 export const compiledOn = "2026-08-22";
 
-export const visits: Visit[] = [
+type Placed = Omit<
+  Visit,
+  | "udiseCode"
+  | "gramPanchayat"
+  | "classesCovered"
+  | "studentCount"
+  | "teacherCount"
+  | "timeOfVisit"
+  | "contact"
+  | "overallCondition"
+  | "evidencePhotos"
+  | "topConcerns"
+  | "additionalComments"
+  | "agentReasoning"
+  | "ingestStatus"
+> &
+  Partial<Visit>;
+
+function placed(row: Placed): Visit {
+  return {
+    udiseCode: null,
+    gramPanchayat: null,
+    classesCovered: null,
+    studentCount: null,
+    teacherCount: null,
+    timeOfVisit: null,
+    contact: null,
+    overallCondition: "not_mentioned",
+    evidencePhotos: "not_mentioned",
+    topConcerns: [null, null, null],
+    additionalComments: null,
+    agentReasoning: null,
+    ingestStatus: "published",
+    ...row,
+  };
+}
+
+export const visits: Visit[] = ([
   {
     id: "santuk-pimpri-zp",
     schoolName: "Zilla Parishad school, Santuk Pimpri",
@@ -25,11 +63,13 @@ export const visits: Visit[] = [
     visitor: "Abhijeet Dipke (CJP), speaking with students after flag hoisting",
     sourceKind: "cjp_campaign",
     auditStatus: "completed",
-    checklist: withChecks({
-      water: "problem",
-      toilets: "problem",
-      furniture: "problem",
+    answers: withAnswers({
+      q1_water: "no",
+      q2_toilets: "no",
+      q4_buildings: "no",
+      q20_computers: "no",
     }),
+    topConcerns: ["No benches / students sitting without furniture", null, null],
     summary:
       "The campaign’s first audit. Students told Dipke the school had no drinking water, no benches, and dirty washrooms. Coverage also lists broken windows and weak water supply. Electricity, meals, and disability access were not described in the reports used here.",
     findings: [
@@ -37,7 +77,7 @@ export const visits: Visit[] = [
       "No benches; students described sitting without them.",
       "Washrooms described as dirty, with inadequate water. The sarpanch later said toilet water had been a problem.",
       "Broken windows and, in later repair notes, defunct CCTV cameras.",
-      "Careers360 also records a non-functioning computer and a teacher shortage from the same visit. Those sit outside this map’s six-plus-furniture checklist.",
+      "Careers360 also records a non-functioning computer (Q20) and a teacher shortage. Benches are not a numbered box on the official form, so they sit in top concerns.",
     ],
     unknowns: [
       "Electricity, mid-day meals, and disability access were not described in the news reports compiled here.",
@@ -84,17 +124,17 @@ export const visits: Visit[] = [
     visitor: "Mukesh Khillare, volunteer",
     sourceKind: "volunteer_video",
     auditStatus: "partial",
-    checklist: withChecks({
-      toilets: "problem",
+    answers: withAnswers({
+      q2_toilets: "no",
     }),
     summary:
-      "A volunteer visit to an unnamed municipal primary school in Chhatrapati Sambhajinagar. Careers360 reports cracked urinals, open drainage, and toilets choked with garbage. Other checklist items were not described.",
+      "A volunteer visit to an unnamed municipal primary school in Chhatrapati Sambhajinagar. Careers360 reports cracked urinals, open drainage, and toilets choked with garbage. Other official-form items were not described.",
     findings: [
       "Cracked urinals, open drainage, and toilets choked with garbage, according to Careers360’s account of the volunteer visit.",
     ],
     unknowns: [
       "The school’s name was not published.",
-      "Drinking water, electricity, meals, furniture, building safety, and access were not mentioned in the compiled report.",
+      "Official-form items other than toilets were not mentioned in the compiled report.",
     ],
     criticalNotes: [],
     followUp: "none_reported",
@@ -124,9 +164,10 @@ export const visits: Visit[] = [
     visitor: "Mukesh, volunteer inspector",
     sourceKind: "volunteer_video",
     auditStatus: "partial",
-    checklist: withChecks({
-      toilets: "problem",
-      safety: "problem",
+    answers: withAnswers({
+      q2_toilets: "no",
+      q4_buildings: "no",
+      q15_safety: "no",
     }),
     summary:
       "An audit at a primary school in Masina Khas documented a classroom whose roof had caved in. The volunteer said the toilet had no door or water, and that there was a strong stench around the premises. Drinking water as a separate supply, electricity, meals, furniture, and access were not described.",
@@ -168,10 +209,11 @@ export const visits: Visit[] = [
     visitor: "Ayaan and a friend, young volunteers",
     sourceKind: "volunteer_video",
     auditStatus: "partial",
-    checklist: withChecks({
-      water: "problem",
-      toilets: "problem",
-      safety: "problem",
+    answers: withAnswers({
+      q1_water: "no",
+      q2_toilets: "no",
+      q4_buildings: "no",
+      q15_safety: "no",
     }),
     summary:
       "Two young volunteers audited a local government school in Meerut. CJP, as quoted by Careers360, said the audit found unsafe drinking water, filthy toilets, and a backyard where snakes and mosquitoes were reportedly present. The school was not named.",
@@ -213,8 +255,9 @@ export const visits: Visit[] = [
     visitor: "Takbir, volunteer",
     sourceKind: "volunteer_video",
     auditStatus: "partial",
-    checklist: withChecks({
-      safety: "problem",
+    answers: withAnswers({
+      q4_buildings: "no",
+      q15_safety: "no",
     }),
     summary:
       "A volunteer named Takbir shared videos of his government school in Pakur district. CJP said parts of the building appeared at risk of collapse. Careers360 reported that one video had crossed 1.7 million views and that CJP alleged authorities had not yet acted. The school was not named.",
@@ -255,8 +298,9 @@ export const visits: Visit[] = [
     visitor: "Unnamed volunteer; report circulated by CJP",
     sourceKind: "volunteer_video",
     auditStatus: "partial",
-    checklist: withChecks({
-      safety: "problem",
+    answers: withAnswers({
+      q4_buildings: "no",
+      q15_safety: "no",
     }),
     summary:
       "From Bano block, CJP said children were studying under tarpaulin because rainwater entered through a damaged classroom ceiling. Villagers had put up the sheet so classes could continue. The school name was not published. Careers360 places the block in Jharkhand; the district is recorded here as Simdega, where Bano block sits — that district name does not appear in the article itself.",
@@ -297,11 +341,11 @@ export const visits: Visit[] = [
     visitor: "Daniel, volunteer",
     sourceKind: "volunteer_video",
     auditStatus: "partial",
-    checklist: withChecks({
-      toilets: "problem",
-      electricity: "problem",
-      meals: "problem",
-      accessibility: "problem",
+    answers: withAnswers({
+      q2_toilets: "no",
+      q3_electricity: "no",
+      q13_meals_regular: "no",
+      q18_accessibility: "no",
     }),
     summary:
       "A volunteer named Daniel audited a government school in Dima Hasao. He reported toilets without water, classrooms without fans, and no kitchen for mid-day meals, and asked the government to improve transport so more students and teachers could attend. The school was not named. Drinking water as a separate supply and building safety were not described.",
@@ -344,10 +388,11 @@ export const visits: Visit[] = [
     visitor: "Hariom, volunteer",
     sourceKind: "volunteer_video",
     auditStatus: "partial",
-    checklist: withChecks({
-      water: "problem",
-      toilets: "problem",
-      accessibility: "problem",
+    answers: withAnswers({
+      q1_water: "no",
+      q2_toilets: "no",
+      q5_playground: "no",
+      q18_accessibility: "no",
     }),
     summary:
       "At a government primary school in Morena, volunteer Hariom found a toilet locked and said it had not been opened since the building was constructed. The report also cited no drinking water and a waterlogged playground. CJP claimed some girls had dropped out because they could not use a toilet. The school was not named.",
@@ -392,7 +437,7 @@ export const visits: Visit[] = [
     visitor: "Unnamed participant, video cited by National Herald",
     sourceKind: "volunteer_video",
     auditStatus: "findings_unpublished",
-    checklist: withChecks({}),
+    answers: withAnswers({}),
     summary:
       "National Herald describes a campaign video from Patharwada in Balaghat showing a government primary school and its surroundings being inspected. The article does not list what the inspection found. The pin marks that a visit was filmed; the checklist is left blank on purpose.",
     findings: ["A campaign video shows the school being inspected."],
@@ -430,8 +475,8 @@ export const visits: Visit[] = [
     visitor: "Unnamed participant, video cited by National Herald",
     sourceKind: "volunteer_video",
     auditStatus: "partial",
-    checklist: withChecks({
-      toilets: "problem",
+    answers: withAnswers({
+      q2_toilets: "no",
     }),
     summary:
       "A campaign video from Yeshwantpur in Bengaluru, described by National Herald, focuses on sanitation: water on a washroom floor, a toilet area outside a classroom, and garbage on parts of the premises. Other checklist items were not described. This is an urban government school, included because the campaign video was named with a place.",
@@ -473,8 +518,9 @@ export const visits: Visit[] = [
     visitor: "Ashutosh Ranka and a CJP team; later described on the ground by Bhaskar",
     sourceKind: "cjp_campaign",
     auditStatus: "blocked",
-    checklist: withChecks({
-      safety: "problem",
+    answers: withAnswers({
+      q4_buildings: "no",
+      q15_safety: "no",
     }),
     summary:
       "CJP went to inspect this government primary school on 21 August 2026 and was pushed out of the village. Local reporting by Bhaskar, after visiting the site, describes children studying in an animal shed with a tin roof, fodder stored beside the class, and a dilapidated original building shored up with iron angles. Villagers and BJP workers said funds had already been sanctioned. CJP’s own checklist from that day is incomplete because the team did not finish the visit.",
@@ -530,10 +576,11 @@ export const visits: Visit[] = [
     visitor: "BBC correspondent Geeta Pandey with local social worker Satpal Narwat",
     sourceKind: "news_field_report",
     auditStatus: "completed",
-    checklist: withChecks({
-      toilets: "problem",
-      safety: "problem",
-      accessibility: "problem",
+    answers: withAnswers({
+      q2_toilets: "no",
+      q4_buildings: "no",
+      q15_safety: "no",
+      q18_accessibility: "no",
     }),
     summary:
       "Not a CJP volunteer audit. The BBC visited this girls’ primary school while reporting the School Thik Karo campaign. From the road the building looked freshly painted; inside, plaster was falling, four of eight toilets were unusable and full of trash, and four of nine classrooms had been abandoned as unsafe. In the rains, classrooms flood. Drinking water, electricity, meals, and furniture were not assessed as a full checklist.",
@@ -577,10 +624,10 @@ export const visits: Visit[] = [
     visitor: "BBC correspondent Geeta Pandey with Satpal Narwat",
     sourceKind: "news_field_report",
     auditStatus: "completed",
-    checklist: withChecks({
-      safety: "problem",
-      furniture: "problem",
+    answers: withAnswers({
+      q4_buildings: "no",
     }),
+    topConcerns: ["Classes running from two rooms and a veranda after a condemned block was demolished", null, null],
     summary:
       "A few hundred metres from the girls’ school, the BBC found the boys’ primary school running from two rooms and a veranda. A second building with three classrooms had been condemned and demolished about five years earlier, with a promise of rebuilding. The plot was a cycle stand. Toilets, water, electricity, meals, and access were not described for this campus.",
     findings: [
@@ -619,9 +666,11 @@ export const visits: Visit[] = [
     visitor: "BBC correspondent Geeta Pandey",
     sourceKind: "news_field_report",
     auditStatus: "completed",
-    checklist: withChecks({
-      toilets: "problem",
+    answers: withAnswers({
+      q2_toilets: "no",
     }),
+    additionalComments:
+      "Head teacher said 40 teachers for 910 children, six present on the visit day because of voter-list duty. That is noted in comments, not stretched onto Q6 without a stated pupil/teacher ratio.",
     summary:
       "The BBC visited a better-equipped primary school in Atmadpur — new building, trophies on display — to show that neglect is not only collapsed roofs. The toilets stank because the part-time cleaner had been sick for two days. The head teacher’s larger complaint was teachers sent on voter-list duty: 40 teachers for 910 children, six present on the day of the visit. Teacher posting is not a building-checklist item, so it is noted rather than scored.",
     findings: [
@@ -661,8 +710,8 @@ export const visits: Visit[] = [
     visitor: "Students Neha Ghare and Jyotsna, via a video that circulated with the campaign",
     sourceKind: "volunteer_video",
     auditStatus: "partial",
-    checklist: withChecks({
-      accessibility: "problem",
+    answers: withAnswers({
+      q18_accessibility: "no",
     }),
     summary:
       "Mumbai Mirror, writing about the School Thik Karo moment, quotes Aatmaram Ghare: the road to the school in Kondivade had not been repaired for 15 years. After his daughter and her friend posted a video, some concrete was laid, then washed by monsoon rain. The school building itself is not described. This pin is about the road, not an interior audit.",
@@ -702,8 +751,9 @@ export const visits: Visit[] = [
     visitor: "Highlighted by Abhijeet Dipke; original reporter not named in the compiled article",
     sourceKind: "cjp_campaign",
     auditStatus: "partial",
-    checklist: withChecks({
-      safety: "problem",
+    answers: withAnswers({
+      q4_buildings: "no",
+      q15_safety: "no",
     }),
     summary:
       "Mumbai Mirror says Dipke highlighted a school in Solapur where a portion of the slab reportedly collapsed, injuring students. The newspaper notes questions over safety. The school is not named, and this dossier has no second source. Treat the collapse as reported, not as a confirmed engineering finding.",
@@ -742,7 +792,7 @@ export const visits: Visit[] = [
     visitor: "Abdul Hafiz, volunteer, according to CJP",
     sourceKind: "cjp_campaign",
     auditStatus: "findings_unpublished",
-    checklist: withChecks({}),
+    answers: withAnswers({}),
     summary:
       "The Wire reports CJP spokesperson Ashutosh Ranka saying a volunteer, Abdul Hafiz, inspected a school in Indus block, Bankura, on or just after launch day, and was later attacked; his father, Janab Mafik, died after intervening. Those are allegations about what happened after the visit. The school’s checklist findings were not published. The pin exists so the visit is not erased; it is not a scored audit.",
     findings: [
@@ -780,7 +830,7 @@ export const visits: Visit[] = [
     visitor: "Unnamed volunteer who travelled from Delhi, according to CJP",
     sourceKind: "cjp_campaign",
     auditStatus: "findings_unpublished",
-    checklist: withChecks({}),
+    answers: withAnswers({}),
     summary:
       "CJP highlighted a young volunteer who took a train from Delhi to Siwan to audit the government school he had studied in: “Delhi to Siwan. One train ticket. One school.” Careers360 repeats the journey. It does not publish what he found. The pin marks the trip, not a scored school.",
     findings: ["CJP said a volunteer travelled from Delhi to Siwan to audit his former school."],
@@ -799,4 +849,4 @@ export const visits: Visit[] = [
       },
     ],
   },
-];
+] as Placed[]).map(placed);

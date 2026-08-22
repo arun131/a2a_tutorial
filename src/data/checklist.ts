@@ -1,58 +1,83 @@
-import type { CategoryStatus, Checklist, ChecklistKey } from "../types";
-import { CHECKLIST_KEYS } from "../types";
+import type { AuditAnswers, AuditKey, FormAnswer, OverallCondition } from "../types";
+import { AUDIT_QUESTIONS, CHECKLIST_KEYS } from "../types";
 
-export { CHECKLIST_KEYS };
+export { AUDIT_QUESTIONS, CHECKLIST_KEYS };
+export type { AuditKey, FormAnswer };
 
-export const CHECKLIST_LABELS: Record<ChecklistKey, string> = {
-  water: "Drinking water",
-  toilets: "Toilets",
-  electricity: "Electricity",
-  safety: "Building safety",
-  meals: "Mid-day meals",
-  accessibility: "Access & disability",
-  furniture: "Benches & furniture",
+export const CHECKLIST_LABELS: Record<AuditKey, string> = Object.fromEntries(
+  AUDIT_QUESTIONS.map((q) => [q.key, `${q.n}. ${q.prompt}`]),
+) as Record<AuditKey, string>;
+
+export const SHORT_LABELS: Record<AuditKey, string> = {
+  q1_water: "Water",
+  q2_toilets: "Toilets",
+  q3_electricity: "Electricity",
+  q4_buildings: "Buildings",
+  q5_playground: "Playground",
+  q6_ptr: "PTR",
+  q7_timetable: "Timetable",
+  q8_attendance: "Attendance",
+  q9_blackboards: "Blackboards",
+  q10_clerk: "Clerk",
+  q11_textbooks: "Textbooks",
+  q12_scholarships: "Scholarships",
+  q13_meals_regular: "Mid-day meals",
+  q14_meals_hygiene: "Meal hygiene",
+  q15_safety: "Safety",
+  q16_safety_resources: "Fire / first-aid",
+  q17_safety_resources_repeat: "Fire / first-aid (Q17)",
+  q18_accessibility: "Accessibility",
+  q19_library: "Library",
+  q20_computers: "Computers",
 };
 
-export const CHECKLIST_HINTS: Record<ChecklistKey, string> = {
-  water: "Clean drinking water on the premises",
-  toilets: "Usable, unlocked toilets with water",
-  electricity: "Working power in classrooms",
-  safety: "Sound building, no collapse risk, no livestock shed",
-  meals: "Kitchen and mid-day meal quality",
-  accessibility: "Roads, ramps, and access for disabled students",
-  furniture: "Benches, desks, and a place to sit other than the floor",
-};
+export const CHECKLIST_HINTS: Record<AuditKey, string> = Object.fromEntries(
+  AUDIT_QUESTIONS.map((q) => [
+    q.key,
+    ("note" in q ? q.note : null) ??
+      `${q.section} — mark YES / NO / N/A only if the source showed it.`,
+  ]),
+) as Record<AuditKey, string>;
 
-export const STATUS_LABELS: Record<CategoryStatus, string> = {
-  problem: "Flagged as a problem",
+export const STATUS_LABELS: Record<FormAnswer, string> = {
+  yes: "YES",
+  no: "NO",
+  na: "N/A",
   not_mentioned: "Not mentioned",
-  reported_ok: "Reported as all right",
 };
 
-export function emptyChecklist(): Checklist {
-  return {
-    water: "not_mentioned",
-    toilets: "not_mentioned",
-    electricity: "not_mentioned",
-    safety: "not_mentioned",
-    meals: "not_mentioned",
-    accessibility: "not_mentioned",
-    furniture: "not_mentioned",
-  };
+export const OVERALL_LABELS: Record<OverallCondition, string> = {
+  good: "GOOD",
+  needs_improvement: "NEEDS IMPROVEMENT",
+  serious_concern: "SERIOUS CONCERN",
+  urgent_action: "URGENT ACTION",
+  not_mentioned: "Not marked",
+};
+
+export function emptyChecklist(): AuditAnswers {
+  return Object.fromEntries(CHECKLIST_KEYS.map((key) => [key, "not_mentioned"])) as AuditAnswers;
 }
 
-export function withChecks(partial: Partial<Checklist>): Checklist {
+export const emptyAnswers = emptyChecklist;
+
+export function withChecks(partial: Partial<AuditAnswers>): AuditAnswers {
   return { ...emptyChecklist(), ...partial };
 }
 
-export function flaggedProblems(checklist: Checklist): ChecklistKey[] {
-  return CHECKLIST_KEYS.filter((key) => checklist[key] === "problem");
+export const withAnswers = withChecks;
+
+export function flaggedProblems(answers: AuditAnswers): AuditKey[] {
+  return CHECKLIST_KEYS.filter((key) => answers[key] === "no");
 }
 
-export function mentionedOk(checklist: Checklist): ChecklistKey[] {
-  return CHECKLIST_KEYS.filter((key) => checklist[key] === "reported_ok");
+export function mentionedOk(answers: AuditAnswers): AuditKey[] {
+  return CHECKLIST_KEYS.filter((key) => answers[key] === "yes");
 }
 
-export function notMentioned(checklist: Checklist): ChecklistKey[] {
-  return CHECKLIST_KEYS.filter((key) => checklist[key] === "not_mentioned");
+export function notMentioned(answers: AuditAnswers): AuditKey[] {
+  return CHECKLIST_KEYS.filter((key) => answers[key] === "not_mentioned");
+}
+
+export function answeredNoCount(answers: AuditAnswers): number {
+  return flaggedProblems(answers).length;
 }

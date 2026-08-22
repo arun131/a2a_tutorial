@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { withChecks } from "../data/checklist";
+import { withAnswers } from "../data/checklist";
 import { visits } from "../data/visits";
 import { severityOf } from "../lib/severity";
 import type { Visit } from "../types";
@@ -9,19 +9,31 @@ function stub(overrides: Partial<Visit>): Visit {
     id: "t",
     schoolName: "Test school",
     schoolNameKnown: true,
+    udiseCode: null,
     village: "Test",
+    gramPanchayat: null,
     block: null,
     district: "Test",
     state: "Test",
+    classesCovered: null,
+    studentCount: null,
+    teacherCount: null,
     lat: 0,
     lng: 0,
     coordinatePrecision: "village_approx",
     observedOn: "2026-08-15",
+    timeOfVisit: null,
     datePrecision: "day",
     visitor: "Tester",
+    contact: null,
     sourceKind: "cjp_campaign",
     auditStatus: "completed",
-    checklist: withChecks({}),
+    answers: withAnswers({}),
+    overallCondition: "not_mentioned",
+    evidencePhotos: "not_mentioned",
+    topConcerns: [null, null, null],
+    additionalComments: null,
+    agentReasoning: null,
     summary: "x",
     findings: [],
     unknowns: [],
@@ -34,9 +46,9 @@ function stub(overrides: Partial<Visit>): Visit {
 }
 
 describe("severityOf", () => {
-  it("never treats not_mentioned categories as problems", () => {
+  it("never treats not_mentioned questions as problems", () => {
     const visit = stub({
-      checklist: withChecks({ toilets: "problem" }),
+      answers: withAnswers({ q2_toilets: "no" }),
     });
     expect(severityOf(visit)).toBe("notable");
   });
@@ -44,7 +56,7 @@ describe("severityOf", () => {
   it("returns incomplete when a visit is blocked and nothing was documented", () => {
     const visit = stub({
       auditStatus: "blocked",
-      checklist: withChecks({}),
+      answers: withAnswers({}),
     });
     expect(severityOf(visit)).toBe("incomplete");
   });
@@ -52,7 +64,7 @@ describe("severityOf", () => {
   it("keeps later field reporting as critical even if the campaign team was blocked", () => {
     const visit = stub({
       auditStatus: "blocked",
-      checklist: withChecks({ safety: "problem" }),
+      answers: withAnswers({ q15_safety: "no" }),
       criticalNotes: ["Classes reported in a livestock shed"],
     });
     expect(severityOf(visit)).toBe("critical");
@@ -64,18 +76,18 @@ describe("severityOf", () => {
 
   it("returns critical only when a source supplied a critical note", () => {
     const visit = stub({
-      checklist: withChecks({ toilets: "problem" }),
+      answers: withAnswers({ q2_toilets: "no" }),
       criticalNotes: ["locked since construction"],
     });
     expect(severityOf(visit)).toBe("critical");
   });
 
-  it("returns serious for three flagged items without a critical note", () => {
+  it("returns serious for three official-form items marked NO without a critical note", () => {
     const visit = stub({
-      checklist: withChecks({
-        water: "problem",
-        toilets: "problem",
-        furniture: "problem",
+      answers: withAnswers({
+        q1_water: "no",
+        q2_toilets: "no",
+        q3_electricity: "no",
       }),
     });
     expect(severityOf(visit)).toBe("serious");
@@ -106,6 +118,12 @@ describe("published visits", () => {
       expect(visit.lat).toBeLessThan(37);
       expect(visit.lng).toBeGreaterThan(68);
       expect(visit.lng).toBeLessThan(98);
+    }
+  });
+
+  it("uses the official 20-question form on every record", () => {
+    for (const visit of visits) {
+      expect(Object.keys(visit.answers)).toHaveLength(20);
     }
   });
 });
