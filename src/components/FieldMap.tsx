@@ -49,7 +49,7 @@ export function FieldMap({
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/india-states.json")
+    fetch(`${import.meta.env.BASE_URL}india-states.json`)
       .then((res) => res.json())
       .then((data: FeatureCollection<Geometry, StateProps>) => {
         if (!cancelled) setGeo(data);

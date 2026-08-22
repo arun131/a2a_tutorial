@@ -30,6 +30,8 @@ npm run build
 npm run preview
 ```
 
+A static copy of the last build lives in `docs/` so it can be opened from a CDN or GitHub Pages.
+
 ## Add a sighting
 
 Use **Add a sighting** in the app, or edit `src/data/visits.ts` and open a pull request. Do not invent a school name, a coordinate tighter than the source supports, or a checklist problem the source did not state.
