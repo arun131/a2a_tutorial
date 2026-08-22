@@ -10,8 +10,8 @@ const SKIP = new Set(["Andaman and Nicobar", "Lakshadweep"]);
 
 const PIN_COLOR: Record<Severity, string> = {
   critical: "#8f2d1f",
-  serious: "#c05621",
-  notable: "#9a7424",
+  serious: "#d26418",
+  notable: "#c9a227",
   incomplete: "#6d6558",
 };
 
@@ -134,7 +134,11 @@ export function FieldMap({
                 <circle className="pin-ring" r={r + 5} stroke="#3d5a3c" />
               )}
               {selectedPin && <circle className="pin-ring" r={r + 8} stroke="#231c14" />}
-              <circle className="pin-core" r={r} fill={PIN_COLOR[severity]} />
+              <circle
+                className={`pin-core${severity === "incomplete" ? " is-hollow" : ""}`}
+                r={r}
+                fill={PIN_COLOR[severity]}
+              />
               <title>
                 {visit.schoolName} — {severity}
               </title>

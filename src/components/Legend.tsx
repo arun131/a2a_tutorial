@@ -5,8 +5,8 @@ const ORDER: Severity[] = ["critical", "serious", "notable", "incomplete"];
 
 const COLORS: Record<Severity, string> = {
   critical: "#8f2d1f",
-  serious: "#c05621",
-  notable: "#9a7424",
+  serious: "#d26418",
+  notable: "#c9a227",
   incomplete: "#6d6558",
 };
 
