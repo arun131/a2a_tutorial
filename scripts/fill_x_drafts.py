@@ -128,9 +128,21 @@ VILLAGE_STOP = {
     "our",
     "your",
     "their",
+    "my",
     "a",
     "an",
 }
+
+
+def clean_village(name: str | None) -> str | None:
+    if not name:
+        return None
+    tokens = [part.lower() for part in re.split(r"\s+", name.strip()) if part]
+    if not tokens or any(token in VILLAGE_STOP for token in tokens):
+        return None
+    if "school" in " ".join(tokens):
+        return None
+    return name.strip()
 
 
 def empty_answers() -> dict[str, str]:
@@ -159,15 +171,12 @@ def place_of(text: str) -> tuple[str | None, str | None, str | None]:
     for district, state in DISTRICTS.items():
         if re.search(rf"\b{re.escape(district)}\b", blob, re.I):
             village_match = VILLAGE_RE.search(blob)
-            village = village_match.group(1).strip() if village_match else None
-            if village and village.lower() in VILLAGE_STOP:
-                village = None
+            village = clean_village(village_match.group(1) if village_match else None)
             return village, district, state
     village_match = VILLAGE_RE.search(blob)
-    if village_match:
-        village = village_match.group(1).strip()
-        if village.lower() not in VILLAGE_STOP and "school" not in village.lower():
-            return village, None, None
+    village = clean_village(village_match.group(1) if village_match else None)
+    if village:
+        return village, None, None
     return None, None, None
 
 
@@ -206,7 +215,7 @@ def main() -> None:
         if not is_after_launch(row.get("created_at"), row.get("id")):
             skipped_prelaunch += 1
             continue
-        text = row.get("text") or ""
+        text = (row.get("text") or "").replace("\u2028", "\n").replace("\u2029", "\n")
         user = row.get("user") or ""
         if not is_campaign(text, user):
             skipped_unrelated += 1

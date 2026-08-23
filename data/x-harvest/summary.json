@@ -1,11 +1,16 @@
 {
-  "compiledOn": "2026-08-22",
+  "compiledOn": "2026-08-23",
   "requested": 600,
-  "fetched": 89,
-  "campaignPosts": 59,
-  "withPlace": 13,
-  "noVillage": 46,
-  "skippedUnrelated": 30,
-  "note": "600 is the harvest target. Rows were not invented. Public search + fxtwitter proved these posts; timelines are not listable without X API.",
-  "blockedWithout": "X_BEARER_TOKEN"
+  "fetched": 600,
+  "uniqueIdsSeen": 600,
+  "cutoff": "2026-08-15T00:00:00.000Z",
+  "source": "x_api_v2_search_all",
+  "invented": 0,
+  "note": "600 is the harvest target, not a number to invent. tweets.jsonl is only posts the official X API returned on or after 15 August 2026.",
+  "campaignPosts": 530,
+  "withPlace": 235,
+  "noVillage": 295,
+  "skippedUnrelated": 70,
+  "skippedPreLaunch": 0,
+  "pinned": 0
 }

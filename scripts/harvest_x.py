@@ -56,10 +56,10 @@ MEDIA_FIELDS = "type,url,preview_image_url,alt_text"
 EXPANSIONS = "author_id,attachments.media_keys,geo.place_id,referenced_tweets.id"
 PLACE_FIELDS = "full_name,country,country_code,place_type,geo"
 
-OFFICIAL_QUERIES = [
-    ("from:abhijeet_dipke -is:retweet", "timeline:abhijeet_dipke"),
-    ("from:Cockroachisback -is:retweet", "timeline:Cockroachisback"),
-    ("from:SchoolThikKaro_ -is:retweet", "timeline:SchoolThikKaro_"),
+OFFICIAL_USERS = [
+    ("abhijeet_dipke", "timeline:abhijeet_dipke"),
+    ("Cockroachisback", "timeline:Cockroachisback"),
+    ("SchoolThikKaro_", "timeline:SchoolThikKaro_"),
 ]
 
 PLACE_QUERY = (
@@ -149,13 +149,13 @@ def api_get(path: str, params: dict[str, str]) -> dict:
             raise HarvestStop(f"X API {exc.code}: {body[:400]}") from exc
         if exc.code == 429:
             reset = exc.headers.get("x-rate-limit-reset")
-            wait_s = 16
+            wait_s = 30
             if reset:
                 try:
-                    wait_s = max(5, int(reset) - int(time.time()) + 2)
+                    wait_s = max(15, int(reset) - int(time.time()) + 3)
                 except ValueError:
-                    wait_s = 16
-            wait_s = min(wait_s, 90)
+                    wait_s = 30
+            wait_s = min(wait_s, 960)
             print(f"rate limited; sleeping {wait_s}s", flush=True)
             time.sleep(wait_s)
             return api_get(path, params)
@@ -178,7 +178,13 @@ def media_by_key(includes: dict) -> dict[str, dict]:
     return out
 
 
-def slim_tweet(tweet: dict, users: dict[str, dict], media: dict[str, dict], via: str) -> dict | None:
+def slim_tweet(
+    tweet: dict,
+    users: dict[str, dict],
+    media: dict[str, dict],
+    via: str,
+    fallback_user: str | None = None,
+) -> dict | None:
     status_id = str(tweet.get("id") or "")
     created = tweet.get("created_at")
     if not status_id or not is_after_launch(created, status_id):
@@ -186,9 +192,9 @@ def slim_tweet(tweet: dict, users: dict[str, dict], media: dict[str, dict], via:
     if any(ref.get("type") == "retweeted" for ref in tweet.get("referenced_tweets") or []):
         return None
     author = users.get(str(tweet.get("author_id") or ""), {})
-    user = author.get("username") or "unknown"
+    user = author.get("username") or fallback_user or "unknown"
     note = (tweet.get("note_tweet") or {}).get("text")
-    text = note or tweet.get("text") or ""
+    text = (note or tweet.get("text") or "").replace("\u2028", "\n").replace("\u2029", "\n")
     media_keys = (tweet.get("attachments") or {}).get("media_keys") or []
     media_items = [media[key] for key in media_keys if key in media]
     return {
@@ -208,49 +214,109 @@ def slim_tweet(tweet: dict, users: dict[str, dict], media: dict[str, dict], via:
     }
 
 
-def search_all(query: str, via: str, found: dict[str, dict], limit: int | None = None) -> int:
+def ingest_payload(
+    payload: dict,
+    via: str,
+    found: dict[str, dict],
+    limit: int | None,
+    fallback_user: str | None = None,
+) -> int:
     added = 0
-    params = {
-        "query": query,
+    users = users_by_id(payload.get("includes") or {})
+    media = media_by_key(payload.get("includes") or {})
+    for tweet in payload.get("data") or []:
+        row = slim_tweet(tweet, users, media, via, fallback_user=fallback_user)
+        if row is None:
+            continue
+        existing = found.get(row["id"])
+        if existing:
+            if via not in existing["via"]:
+                existing["via"].append(via)
+            continue
+        found[row["id"]] = row
+        added += 1
+        if limit is not None and len(found) >= limit:
+            break
+    return added
+
+
+def common_params(max_results: int = 100) -> dict[str, str]:
+    return {
         "start_time": START_TIME,
-        "max_results": "100",
+        "max_results": str(max_results),
         "tweet.fields": TWEET_FIELDS,
         "expansions": EXPANSIONS,
         "user.fields": USER_FIELDS,
         "media.fields": MEDIA_FIELDS,
         "place.fields": PLACE_FIELDS,
     }
+
+
+def lookup_user(username: str) -> dict:
+    payload = api_get(
+        f"/users/by/username/{urllib.parse.quote(username)}",
+        {"user.fields": "id,username,name,public_metrics"},
+    )
+    data = payload.get("data")
+    if not data:
+        raise HarvestStop(f"user lookup failed for {username}: {payload}")
+    return data
+
+
+def user_timeline(username: str, via: str, found: dict[str, dict]) -> int:
+    user = lookup_user(username)
+    added = 0
+    params = common_params(100)
+    params["exclude"] = "retweets"
+    pages = 0
+    path = f"/users/{user['id']}/tweets"
+    while True:
+        payload = api_get(path, params)
+        pages += 1
+        added += ingest_payload(payload, via, found, None, fallback_user=username)
+        meta = payload.get("meta") or {}
+        print(
+            f"  {via} page {pages} +{added} unique={len(found)} result_count={meta.get('result_count')}",
+            flush=True,
+        )
+        nxt = meta.get("next_token")
+        if not nxt:
+            break
+        params["pagination_token"] = nxt
+        time.sleep(0.2)
+    return added
+
+
+def search_all(query: str, via: str, found: dict[str, dict], limit: int | None = None) -> int:
+    added = 0
+    params = common_params(500)
+    params["query"] = query
     pages = 0
     while True:
         if limit is not None and len(found) >= limit:
             break
-        payload = api_get("/tweets/search/all", params)
+        try:
+            payload = api_get("/tweets/search/all", params)
+        except HarvestStop as exc:
+            if "max_results" in str(exc).lower() and params["max_results"] != "100":
+                print("search/all rejected 500; retrying at 100", flush=True)
+                params["max_results"] = "100"
+                payload = api_get("/tweets/search/all", params)
+            else:
+                raise
         pages += 1
-        users = users_by_id(payload.get("includes") or {})
-        media = media_by_key(payload.get("includes") or {})
-        for tweet in payload.get("data") or []:
-            row = slim_tweet(tweet, users, media, via)
-            if row is None:
-                continue
-            existing = found.get(row["id"])
-            if existing:
-                if via not in existing["via"]:
-                    existing["via"].append(via)
-                continue
-            found[row["id"]] = row
-            added += 1
-            if limit is not None and len(found) >= limit:
-                break
+        added += ingest_payload(payload, via, found, limit)
         meta = payload.get("meta") or {}
         nxt = meta.get("next_token")
         print(
             f"  {via} page {pages} +{added} unique={len(found)} result_count={meta.get('result_count')}",
             flush=True,
         )
+        write_outputs(found, extra={"partial": True})
         if not nxt or (limit is not None and len(found) >= limit):
             break
         params["next_token"] = nxt
-        time.sleep(0.25)
+        time.sleep(12)
     return added
 
 
@@ -259,6 +325,8 @@ def write_outputs(found: dict[str, dict], extra: dict | None = None) -> None:
     tweets_path = OUT_DIR / "tweets.jsonl"
     with tweets_path.open("w", encoding="utf-8") as fh:
         for row in rows:
+            if isinstance(row.get("text"), str):
+                row["text"] = row["text"].replace("\u2028", "\n").replace("\u2029", "\n")
             fh.write(json.dumps(row, ensure_ascii=False) + "\n")
     ids = {
         row["id"]: {
@@ -295,9 +363,10 @@ def write_outputs(found: dict[str, dict], extra: dict | None = None) -> None:
 
 def collect() -> dict[str, dict]:
     found: dict[str, dict] = {}
-    for query, via in OFFICIAL_QUERIES:
+    for username, via in OFFICIAL_USERS:
         print(f"wave official {via}", flush=True)
-        search_all(query, via, found)
+        user_timeline(username, via, found)
+        write_outputs(found, extra={"partial": True})
     print(f"after official unique={len(found)}", flush=True)
     if len(found) < TARGET:
         print("wave place-named campaign posts", flush=True)
