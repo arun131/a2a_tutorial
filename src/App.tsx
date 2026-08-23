@@ -3,6 +3,7 @@ import { AboutRecord } from "./components/AboutRecord";
 import { Dossier } from "./components/Dossier";
 import { FieldMap } from "./components/FieldMap";
 import { Filters } from "./components/Filters";
+import { HarvestDashboard } from "./components/HarvestDashboard";
 import { Masthead } from "./components/Masthead";
 import { SubmitLead } from "./components/SubmitLead";
 import { VisitList } from "./components/VisitList";
@@ -70,6 +71,13 @@ export function App() {
             <VisitList visits={visible} selectedId={selectedId} onSelect={select} />
           </aside>
         </div>
+      ) : page === "dashboard" ? (
+        <HarvestDashboard
+          onOpenPlace={(id) => {
+            setSelectedId(id);
+            setPage("map");
+          }}
+        />
       ) : page === "record" ? (
         <AboutRecord />
       ) : (

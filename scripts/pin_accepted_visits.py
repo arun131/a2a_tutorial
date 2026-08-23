@@ -49,6 +49,8 @@ COORDS = {
     ("Masina Khas", "Siddharthnagar", "Uttar Pradesh"): (27.18, 82.93, "village_approx"),
     (None, "Bankura", "West Bengal"): (23.23, 87.07, "district_approx"),
     (None, "Rajasthan", "Rajasthan"): (27.02, 74.22, "district_approx"),
+    (None, "Hingoli", "Maharashtra"): (19.72, 77.15, "district_approx"),
+    (None, "Hansi", "Haryana"): (29.10, 75.96, "district_approx"),
 }
 
 # If a visit id already exists for this place, only add X sources — do not duplicate pin.

@@ -1,9 +1,11 @@
+import { harvestDashboard } from "../data/harvest";
 import { compiledOn } from "../data/visits";
 import { formatObservedOn } from "../lib/format";
 import type { PageId } from "../types";
 
 const PAGES: { id: PageId; label: string }[] = [
   { id: "map", label: "Field map" },
+  { id: "dashboard", label: "Dashboard" },
   { id: "record", label: "How this was made" },
   { id: "submit", label: "Add a sighting" },
 ];
@@ -29,10 +31,11 @@ export function Masthead({
         </div>
         <h1>A map of what the visits found</h1>
         <p>
-          {mappedCount} schools placed from public reports — not the 1,200–1,500
-          audits CJP says arrived in the first week. Each dossier uses the
-          official 20-question 10-point survey form. Silence on a box is left
-          blank, not marked YES.
+          {mappedCount} places on the map from news reporting and a manual
+          review of {harvestDashboard.harvestedPosts} X posts — {harvestDashboard.locationGroups}{" "}
+          accepted locations, {harvestDashboard.postsWithNamedPlace} posts that
+          named a place. Each dossier uses the official 20-question form.
+          Silence on a box is left blank, not marked YES.
         </p>
       </div>
       <nav className="nav" aria-label="Record sections">

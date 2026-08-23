@@ -7,7 +7,7 @@ import type { Visit } from "../types";
  * This file is the much smaller set that newsrooms named with a place.
  * Checklist answers follow the official 20-question 10-point form.
  */
-export const compiledOn = "2026-08-22";
+export const compiledOn = "2026-08-23";
 
 type Placed = Omit<
   Visit,
@@ -1040,8 +1040,8 @@ export const visits: Visit[] = ([
     block: null,
     district: "Hingoli",
     state: "Maharashtra",
-    lat: 0.0,
-    lng: 0.0,
+    lat: 19.72,
+    lng: 77.15,
     coordinatePrecision: "district_approx",
     observedOn: "2026-08-21",
     datePrecision: "day",
@@ -1792,8 +1792,8 @@ export const visits: Visit[] = ([
     block: null,
     district: "Hansi",
     state: "Haryana",
-    lat: 0.0,
-    lng: 0.0,
+    lat: 29.10,
+    lng: 75.96,
     coordinatePrecision: "district_approx",
     observedOn: "2026-08-22",
     datePrecision: "day",

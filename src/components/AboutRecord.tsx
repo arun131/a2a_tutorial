@@ -101,13 +101,12 @@ export function AboutRecord() {
         The first public net is X: @Cockroachisback, @abhijeet_dipke, and
         #SchoolThikKaro, using the official X API. Every harvested post is
         dated on or after the 15 August 2026 launch — Dipke’s older timeline
-        is left out. The script writes every post it can prove into{" "}
-        <code>data/x-harvest/</code>. The target is 600 posts. That number is
-        not invented if search returns fewer. A draft 10-point form is filled
-        only when a post names a village or district. Posts that name the
-        same place are combined on one draft — extra URLs are proof, not extra
-        rows. Accepted rows from the X harvest are pinned with{" "}
-        <code>ingestStatus: accepted</code>. Unmentioned questions stay blank.
+        is left out. 600 real posts were written into{" "}
+        <code>data/x-harvest/</code>. All 530 campaign posts were then read
+        one-by-one: 408 named a place, 122 were generic promo with no village,
+        and those 408 collapsed into 39 accepted locations on the map. The
+        Dashboard page lists every group. Unmentioned questions stay blank.
+        Instagram and WhatsApp films are still outside this net.
       </p>
 
       <h3 className="serif">How to add what we missed</h3>

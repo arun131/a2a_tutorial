@@ -50,6 +50,9 @@ export function VisitList({
                 : " · Form not filled"}
               {visit.followUp === "repairs_claimed" ? " · Repair claimed" : ""}
               {visit.recordKind === "local_lead" ? " · Local sighting" : ""}
+              {visit.recordKind === "x_draft"
+                ? ` · X harvest · ${visit.sources.length} proof link${visit.sources.length === 1 ? "" : "s"}`
+                : ""}
             </p>
           </button>
         );

@@ -43,7 +43,11 @@ export function Dossier({ visit, onClose }: { visit: Visit; onClose: () => void 
         <span className="badge">{OVERALL_LABELS[visit.overallCondition]}</span>
         {visit.followUp === "repairs_claimed" && <span className="badge repair">Repair claimed</span>}
         {visit.recordKind === "local_lead" && <span className="badge lead">Unreviewed lead</span>}
-        {visit.recordKind === "x_draft" && <span className="badge lead">X draft</span>}
+        {visit.recordKind === "x_draft" && (
+          <span className="badge lead">
+            X harvest{visit.ingestStatus === "accepted" ? " · accepted" : ""}
+          </span>
+        )}
         {!visit.schoolNameKnown && <span className="badge incomplete">Name unconfirmed</span>}
       </div>
 

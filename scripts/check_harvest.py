@@ -64,7 +64,11 @@ def main() -> int:
         if payload.get("summary", {}).get("pinned", 0) < 0:
             errors.append("drafts summary pinned invalid")
         with_place = payload.get("summary", {}).get("withPlace")
-        grouped_posts = sum(int(d.get("sourceCount") or 1) for d in drafts if d.get("ingestStatus") == "draft")
+        grouped_posts = sum(
+            int(d.get("sourceCount") or 1)
+            for d in drafts
+            if d.get("ingestStatus") in {"draft", "accepted", "published"}
+        )
         if with_place is not None and grouped_posts != with_place:
             errors.append(f"grouped sourceCount {grouped_posts} != withPlace {with_place}")
     if summary_path.exists():

@@ -211,7 +211,7 @@ export interface Visit {
   sources: Source[];
 }
 
-export type PageId = "map" | "record" | "submit";
+export type PageId = "map" | "dashboard" | "record" | "submit";
 
 /** @deprecated Use AuditKey. Kept so older filter URLs can be mapped if needed. */
 export type ChecklistKey = AuditKey;
