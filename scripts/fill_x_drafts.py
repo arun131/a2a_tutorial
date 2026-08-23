@@ -4,6 +4,7 @@
 Never invent a village. Unmentioned questions stay not_mentioned.
 Never pin. ingestStatus stays draft / no_village until a human accepts.
 Posts before 15 August 2026 are dropped, including Dipke.
+Located drafts are grouped by place: one form row, many proof URLs.
 """
 
 from __future__ import annotations
@@ -85,6 +86,13 @@ DISTRICTS = {
     "Jaipur": "Rajasthan",
     "Dima Hasao": "Assam",
     "Bengaluru": "Karnataka",
+}
+
+# Same village written more than one way in the posts. Do not invent a new place.
+VILLAGE_ALIASES = {
+    ("rampura", "jaipur", "rajasthan"): ("Rampura Kanwarpura", "Jaipur", "Rajasthan"),
+    ("kanwarpura", "jaipur", "rajasthan"): ("Rampura Kanwarpura", "Jaipur", "Rajasthan"),
+    ("rampura kanwarpura", "jaipur", "rajasthan"): ("Rampura Kanwarpura", "Jaipur", "Rajasthan"),
 }
 
 NAMED_VILLAGES = {
@@ -180,6 +188,136 @@ def place_of(text: str) -> tuple[str | None, str | None, str | None]:
     return None, None, None
 
 
+def canonical_place(
+    village: str | None, district: str | None, state: str | None
+) -> tuple[str | None, str | None, str | None]:
+    key = (
+        (village or "").strip().lower(),
+        (district or "").strip().lower(),
+        (state or "").strip().lower(),
+    )
+    if key in VILLAGE_ALIASES:
+        return VILLAGE_ALIASES[key]
+    return village, district, state
+
+
+def location_key(village: str | None, district: str | None, state: str | None) -> tuple[str | None, str | None, str | None]:
+    village, district, state = canonical_place(village, district, state)
+    return (
+        village.lower() if village else None,
+        district.lower() if district else None,
+        state.lower() if state else None,
+    )
+
+
+def place_slug(village: str | None, district: str | None, state: str | None) -> str:
+    village, district, state = canonical_place(village, district, state)
+    parts = [part for part in (village, district, state) if part]
+    slug = "-".join(re.sub(r"[^a-z0-9]+", "-", part.lower()).strip("-") for part in parts)
+    return f"x-loc-{slug or 'unknown'}"
+
+
+def merge_answers(rows: list[dict]) -> dict[str, str]:
+    merged = empty_answers()
+    for key in QUESTIONS:
+        values = [row["answers"].get(key, "not_mentioned") for row in rows]
+        if "no" in values:
+            merged[key] = "no"
+        elif "yes" in values:
+            merged[key] = "yes"
+        elif "na" in values:
+            merged[key] = "na"
+    return merged
+
+
+def pick_surveyor(users: list[str]) -> str:
+    unique = list(dict.fromkeys(user for user in users if user))
+    if not unique:
+        return "unknown"
+    head = unique[0]
+    for official in ("abhijeet_dipke", "Cockroachisback", "SchoolThikKaro_"):
+        match = next((user for user in unique if user.lower() == official.lower()), None)
+        if match:
+            head = match
+            break
+    rest = [user for user in unique if user.lower() != head.lower()]
+    if rest:
+        return f"{head} +{len(rest)} other accounts"
+    return head
+
+
+def merge_located(rows: list[dict]) -> dict:
+    rows = sorted(rows, key=lambda r: (r.get("sourceCreatedAt") or "", r.get("sourceId") or ""))
+    first = rows[0]
+    village, district, state = canonical_place(first["village"], first["district"], first["state"])
+    proof = []
+    posts = []
+    users: list[str] = []
+    seen_urls: set[str] = set()
+    has_photo = False
+    for row in rows:
+        for url in row.get("proofUrls") or []:
+            if url and url not in seen_urls:
+                seen_urls.add(url)
+                proof.append(url)
+        users.append(row.get("sourceUser") or "")
+        if row.get("evidencePhotos") == "yes":
+            has_photo = True
+        posts.append(
+            {
+                "id": row.get("sourceId"),
+                "user": row.get("sourceUser"),
+                "url": (row.get("proofUrls") or [None])[0],
+                "created_at": row.get("sourceCreatedAt"),
+            }
+        )
+    place_label = ", ".join(part for part in (village, district, state) if part)
+    official_rows = [
+        row for row in rows if (row.get("sourceUser") or "").lower() in OFFICIAL_USERS
+    ]
+    representative = max(
+        official_rows or rows,
+        key=lambda r: len(r.get("additionalComments") or ""),
+    )
+    return {
+        "id": place_slug(village, district, state),
+        "ingestStatus": "draft",
+        "schoolName": None,
+        "udiseCode": None,
+        "surveyorName": pick_surveyor(users),
+        "village": village,
+        "gramPanchayat": None,
+        "district": district,
+        "state": state,
+        "classesCovered": None,
+        "studentCount": None,
+        "teacherCount": None,
+        "observedOn": first.get("observedOn"),
+        "timeOfVisit": None,
+        "answers": merge_answers(rows),
+        "overallCondition": "not_mentioned",
+        "evidencePhotos": "yes" if has_photo else "not_mentioned",
+        "topConcerns": [None, None, None],
+        "additionalComments": (
+            f"Combined from {len(rows)} posts that named {place_label}. "
+            "Unmentioned official-form boxes left blank.\n\n"
+            + (representative.get("additionalComments") or "")
+        ),
+        "agentReasoning": (
+            f"One draft for {place_label}. {len(rows)} posts are proof on this "
+            "row, not separate pins. Filled only from tweet text. Not a pin."
+        ),
+        "proofUrls": proof,
+        "sourceId": first.get("sourceId"),
+        "sourceIds": [row.get("sourceId") for row in rows],
+        "sourceUser": pick_surveyor(users),
+        "sourceUsers": list(dict.fromkeys(u for u in users if u)),
+        "sourceCreatedAt": first.get("sourceCreatedAt"),
+        "sourceCount": len(rows),
+        "sourcePosts": posts,
+    }
+
+
 def answers_from(text: str) -> dict[str, str]:
     answers = empty_answers()
     blob = text or ""
@@ -256,17 +394,45 @@ def main() -> None:
                 "sourceCreatedAt": row.get("created_at"),
             }
         )
+
+    located = [row for row in drafts if row["ingestStatus"] == "draft"]
+    unlocated = [row for row in drafts if row["ingestStatus"] == "no_village"]
+    grouped: dict[tuple[str | None, str | None, str | None], list[dict]] = {}
+    for row in located:
+        key = location_key(row["village"], row["district"], row["state"])
+        grouped.setdefault(key, []).append(row)
+    location_drafts = [merge_located(rows) for rows in grouped.values()]
+    location_drafts.sort(key=lambda row: (-row["sourceCount"], row["id"]))
+
     summary = {
         "campaignPosts": len(drafts),
-        "withPlace": sum(1 for d in drafts if d["ingestStatus"] == "draft"),
+        "withPlace": len(located),
+        "locationGroups": len(location_drafts),
         "noVillage": no_village,
         "skippedUnrelated": skipped_unrelated,
         "skippedPreLaunch": skipped_prelaunch,
         "pinned": 0,
-        "note": "Drafts are not map pins. Place is taken from the tweet text only. Nothing is accepted or pinned here.",
+        "groupedByLocation": True,
+        "note": (
+            "Located drafts are one official-form row per place; extra posts "
+            "are proof URLs on that row. They are not map pins."
+        ),
     }
-    OUT.write_text(json.dumps({"summary": summary, "drafts": drafts}, indent=2, ensure_ascii=False), encoding="utf-8")
+    OUT.write_text(
+        json.dumps(
+            {"summary": summary, "drafts": location_drafts, "unlocated": unlocated},
+            indent=2,
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
     print(json.dumps(summary, indent=2))
+    for row in location_drafts:
+        print(
+            f"  {row['sourceCount']:3}  {row['village'] or '—'}, "
+            f"{row['district'] or '—'}, {row['state'] or '—'}",
+            flush=True,
+        )
 
 
 if __name__ == "__main__":

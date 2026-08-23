@@ -16,8 +16,17 @@ function loadJsonl(name: string): Array<Record<string, unknown>> {
 describe("X harvest", () => {
   const tweets = loadJsonl("tweets.jsonl");
   const drafts = JSON.parse(readFileSync(resolve("data/x-harvest/drafts.json"), "utf8")) as {
-    summary: { pinned?: number };
-    drafts: Array<{ ingestStatus: string; sourceCreatedAt?: string; sourceId?: string }>;
+    summary: { pinned?: number; withPlace?: number; locationGroups?: number };
+    drafts: Array<{
+      ingestStatus: string;
+      village?: string | null;
+      district?: string | null;
+      state?: string | null;
+      sourceCount?: number;
+      proofUrls?: string[];
+      sourceCreatedAt?: string;
+      sourceId?: string;
+    }>;
   };
   const summary = JSON.parse(readFileSync(resolve("data/x-harvest/summary.json"), "utf8")) as {
     fetched: number;
@@ -55,10 +64,25 @@ describe("X harvest", () => {
     expect(summary.pinned).toBe(0);
     expect(drafts.summary.pinned).toBe(0);
     for (const draft of drafts.drafts) {
-      expect(["draft", "no_village"]).toContain(draft.ingestStatus);
+      expect(draft.ingestStatus).toBe("draft");
       if (draft.sourceCreatedAt) {
         expect(Date.parse(draft.sourceCreatedAt)).toBeGreaterThanOrEqual(CUTOFF);
       }
     }
+  });
+
+  it("groups located drafts into one official-form row per place", () => {
+    const keys = drafts.drafts.map(
+      (draft) => `${draft.village || ""}|${draft.district || ""}|${draft.state || ""}`.toLowerCase(),
+    );
+    expect(new Set(keys).size).toBe(keys.length);
+    expect(drafts.summary.locationGroups).toBe(drafts.drafts.length);
+    const combinedPosts = drafts.drafts.reduce((sum, draft) => sum + (draft.sourceCount || 1), 0);
+    expect(combinedPosts).toBe(drafts.summary.withPlace);
+    const rampura = drafts.drafts.filter((draft) =>
+      /rampura|kanwarpura/i.test(String(draft.village || "")),
+    );
+    expect(rampura).toHaveLength(1);
+    expect(rampura[0]?.proofUrls?.length).toBeGreaterThan(1);
   });
 });

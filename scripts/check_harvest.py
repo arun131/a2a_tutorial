@@ -40,7 +40,9 @@ def main() -> int:
             errors.append(f"invented flag on {row.get('id')}")
     if drafts_path.exists():
         payload = json.loads(drafts_path.read_text(encoding="utf-8"))
-        for draft in payload.get("drafts") or []:
+        drafts = payload.get("drafts") or []
+        keys = []
+        for draft in drafts:
             status = draft.get("ingestStatus")
             if status in {"accepted", "published"}:
                 errors.append(f"draft {draft.get('id')} was pinned as {status}")
@@ -48,8 +50,23 @@ def main() -> int:
                 draft.get("sourceCreatedAt"), draft.get("sourceId")
             ):
                 errors.append(f"pre-launch draft {draft.get('id')}")
+            if status == "draft":
+                key = (
+                    (draft.get("village") or "").lower(),
+                    (draft.get("district") or "").lower(),
+                    (draft.get("state") or "").lower(),
+                )
+                keys.append(key)
+                if not draft.get("proofUrls"):
+                    errors.append(f"located draft {draft.get('id')} has no proof")
+        if len(keys) != len(set(keys)):
+            errors.append("located drafts were not combined to one row per place")
         if payload.get("summary", {}).get("pinned"):
             errors.append("drafts summary claims pins")
+        with_place = payload.get("summary", {}).get("withPlace")
+        grouped_posts = sum(int(d.get("sourceCount") or 1) for d in drafts if d.get("ingestStatus") == "draft")
+        if with_place is not None and grouped_posts != with_place:
+            errors.append(f"grouped sourceCount {grouped_posts} != withPlace {with_place}")
     if summary_path.exists():
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
         if summary.get("invented"):

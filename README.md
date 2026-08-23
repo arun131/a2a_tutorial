@@ -37,7 +37,7 @@ A static copy of the last build lives in `docs/` so it can be opened from a CDN 
 
 Use **Add a sighting** in the app, or edit `src/data/visits.ts` and open a pull request. Do not invent a school name, a coordinate tighter than the source supports, or mark a form box the source did not show.
 
-X harvest lives in `data/x-harvest/`. `scripts/harvest_x.py` uses the official X API (`X_BEARER_TOKEN`) and keeps every post on or after **15 August 2026**, including Dipke. Drafts are official 10-point forms filled only from the post text; they are not map pins until accepted. The harvest target is 600 real posts — that number is not invented if search returns fewer.
+X harvest lives in `data/x-harvest/`. `scripts/harvest_x.py` uses the official X API (`X_BEARER_TOKEN`) and keeps every post on or after **15 August 2026**, including Dipke. Drafts are official 10-point forms filled only from the post text; posts that name the same place share one draft. They are not map pins until accepted. The harvest target is 600 real posts — that number is not invented if search returns fewer.
 
 ## Map drawing
 
