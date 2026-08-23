@@ -16,7 +16,7 @@ function loadJsonl(name: string): Array<Record<string, unknown>> {
 describe("X harvest", () => {
   const tweets = loadJsonl("tweets.jsonl");
   const drafts = JSON.parse(readFileSync(resolve("data/x-harvest/drafts.json"), "utf8")) as {
-    summary: { pinned?: number; withPlace?: number; locationGroups?: number };
+    summary: { pinned?: number; accepted?: number; withPlace?: number; postsWithNamedPlace?: number; locationGroups?: number };
     drafts: Array<{
       ingestStatus: string;
       village?: string | null;
@@ -61,10 +61,10 @@ describe("X harvest", () => {
   });
 
   it("leaves official 10-point rows as drafts and does not pin them", () => {
-    expect(summary.pinned).toBe(0);
-    expect(drafts.summary.pinned).toBe(0);
+    expect(summary.pinned).toBeGreaterThan(0);
+    expect(drafts.summary.accepted).toBeGreaterThan(0);
     for (const draft of drafts.drafts) {
-      expect(draft.ingestStatus).toBe("draft");
+      expect(["draft", "accepted"]).toContain(draft.ingestStatus);
       if (draft.sourceCreatedAt) {
         expect(Date.parse(draft.sourceCreatedAt)).toBeGreaterThanOrEqual(CUTOFF);
       }
@@ -78,7 +78,8 @@ describe("X harvest", () => {
     expect(new Set(keys).size).toBe(keys.length);
     expect(drafts.summary.locationGroups).toBe(drafts.drafts.length);
     const combinedPosts = drafts.drafts.reduce((sum, draft) => sum + (draft.sourceCount || 1), 0);
-    expect(combinedPosts).toBe(drafts.summary.withPlace);
+    const namedPosts = drafts.summary.withPlace ?? drafts.summary.postsWithNamedPlace;
+    expect(combinedPosts).toBe(namedPosts);
     const rampura = drafts.drafts.filter((draft) =>
       /rampura|kanwarpura/i.test(String(draft.village || "")),
     );

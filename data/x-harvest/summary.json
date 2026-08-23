@@ -8,11 +8,13 @@
   "invented": 0,
   "note": "600 is the harvest target, not a number to invent. tweets.jsonl is only posts the official X API returned on or after 15 August 2026.",
   "campaignPosts": 530,
-  "withPlace": 235,
-  "locationGroups": 18,
+  "withPlace": 408,
+  "locationGroups": 39,
   "noVillage": 295,
   "skippedUnrelated": 70,
   "skippedPreLaunch": 0,
-  "pinned": 0,
-  "groupedByLocation": true
+  "pinned": 39,
+  "groupedByLocation": true,
+  "accepted": 39,
+  "manualReview": true
 }

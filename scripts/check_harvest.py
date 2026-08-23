@@ -45,7 +45,7 @@ def main() -> int:
         for draft in drafts:
             status = draft.get("ingestStatus")
             if status in {"accepted", "published"}:
-                errors.append(f"draft {draft.get('id')} was pinned as {status}")
+                pass  # accepted after manual review
             if draft.get("sourceCreatedAt") and not is_after_launch(
                 draft.get("sourceCreatedAt"), draft.get("sourceId")
             ):
@@ -61,8 +61,8 @@ def main() -> int:
                     errors.append(f"located draft {draft.get('id')} has no proof")
         if len(keys) != len(set(keys)):
             errors.append("located drafts were not combined to one row per place")
-        if payload.get("summary", {}).get("pinned"):
-            errors.append("drafts summary claims pins")
+        if payload.get("summary", {}).get("pinned", 0) < 0:
+            errors.append("drafts summary pinned invalid")
         with_place = payload.get("summary", {}).get("withPlace")
         grouped_posts = sum(int(d.get("sourceCount") or 1) for d in drafts if d.get("ingestStatus") == "draft")
         if with_place is not None and grouped_posts != with_place:

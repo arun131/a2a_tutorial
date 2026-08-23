@@ -104,10 +104,10 @@ export function AboutRecord() {
         is left out. The script writes every post it can prove into{" "}
         <code>data/x-harvest/</code>. The target is 600 posts. That number is
         not invented if search returns fewer. A draft 10-point form is filled
-        only when the post names a village or district. Posts that name the
+        only when a post names a village or district. Posts that name the
         same place are combined on one draft — extra URLs are proof, not extra
-        rows. Unmentioned questions stay blank. Drafts are not pins until
-        someone accepts them.
+        rows. Accepted rows from the X harvest are pinned with{" "}
+        <code>ingestStatus: accepted</code>. Unmentioned questions stay blank.
       </p>
 
       <h3 className="serif">How to add what we missed</h3>

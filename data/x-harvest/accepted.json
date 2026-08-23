@@ -4,12 +4,9 @@
     "postsWithNamedPlace": 408,
     "locationGroups": 39,
     "accepted": 39,
-    "note": "Each row is one named place from explicit post text. Not invented.",
-    "withPlace": 408,
-    "pinned": 39,
-    "groupedByLocation": true
+    "note": "Each row is one named place from explicit post text. Not invented."
   },
-  "drafts": [
+  "locations": [
     {
       "id": "x-loc-jaipur-rajasthan",
       "ingestStatus": "accepted",
@@ -5933,6 +5930,5 @@
       ],
       "block": "Himayatnagar"
     }
-  ],
-  "unlocated": []
+  ]
 }
