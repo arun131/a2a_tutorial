@@ -99,7 +99,9 @@ export function AboutRecord() {
       <h3 className="serif">X harvest</h3>
       <p>
         The first public net is X: @Cockroachisback, @abhijeet_dipke, and
-        #SchoolThikKaro. The harvest script writes every post it can prove into{" "}
+        #SchoolThikKaro, using the official X API. Every harvested post is
+        dated on or after the 15 August 2026 launch — Dipke’s older timeline
+        is left out. The script writes every post it can prove into{" "}
         <code>data/x-harvest/</code>. The target is 600 posts. That number is
         not invented if search returns fewer. A draft 10-point form is filled
         only when the post names a village or district. Unmentioned questions

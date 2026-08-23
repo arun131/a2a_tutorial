@@ -2,17 +2,26 @@
 """Fill official 10-point drafts from harvested X posts.
 
 Never invent a village. Unmentioned questions stay not_mentioned.
+Never pin. ingestStatus stays draft / no_village until a human accepts.
+Posts before 15 August 2026 are dropped, including Dipke.
 """
 
 from __future__ import annotations
 
 import json
 import re
+import sys
 from pathlib import Path
+
+SCRIPTS = Path(__file__).resolve().parent
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
+from harvest_x import is_after_launch  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 HARVEST = ROOT / "data" / "x-harvest"
 OUT = HARVEST / "drafts.json"
+OFFICIAL_USERS = {"cockroachisback", "abhijeet_dipke", "schoolthikkaro_"}
 
 QUESTIONS = [
     "q1_water",
@@ -38,8 +47,9 @@ QUESTIONS = [
 ]
 
 CAMPAIGN_RE = re.compile(
-    r"school\s*thik\s*karo|स्कूल\s*ठीक|cockroach|zilla parishad|\bzp\b|"
-    r"govt school|government school|mid[- ]day|toilet|UDISE",
+    r"school\s*thik\s*karo|स्कूल\s*ठीक|#schoolthikkaro|"
+    r"zilla parishad|\bzp school\b|govt school|government school|"
+    r"mid[- ]day|UDISE|सरकारी स्कूल",
     re.I,
 )
 
@@ -129,10 +139,16 @@ def empty_answers() -> dict[str, str]:
 
 def is_campaign(text: str, user: str) -> bool:
     blob = text or ""
+    if re.search(r"jail\s*thik\s*karo", blob, re.I):
+        return False
     if re.search(r"strategy meet|recruitment exam|JPSC|JSSC|MMRDA|degree", blob, re.I):
         if not re.search(r"school thik karo|स्कूल ठीक|#SchoolThikKaro|govt school|government school", blob, re.I):
             return False
-    return bool(CAMPAIGN_RE.search(blob))
+    if CAMPAIGN_RE.search(blob):
+        return True
+    if (user or "").lower() in OFFICIAL_USERS and re.search(r"school|स्कूल|शिक्षा", blob, re.I):
+        return True
+    return False
 
 
 def place_of(text: str) -> tuple[str | None, str | None, str | None]:
@@ -181,15 +197,19 @@ def main() -> None:
         return
     drafts = []
     no_village = 0
-    skipped = 0
+    skipped_unrelated = 0
+    skipped_prelaunch = 0
     for line in path.read_text(encoding="utf-8").splitlines():
         if not line.strip():
             continue
         row = json.loads(line)
+        if not is_after_launch(row.get("created_at"), row.get("id")):
+            skipped_prelaunch += 1
+            continue
         text = row.get("text") or ""
         user = row.get("user") or ""
         if not is_campaign(text, user):
-            skipped += 1
+            skipped_unrelated += 1
             continue
         village, district, state = place_of(text)
         answers = answers_from(text)
@@ -231,8 +251,10 @@ def main() -> None:
         "campaignPosts": len(drafts),
         "withPlace": sum(1 for d in drafts if d["ingestStatus"] == "draft"),
         "noVillage": no_village,
-        "skippedUnrelated": skipped,
-        "note": "Drafts are not map pins. Place is taken from the tweet text only.",
+        "skippedUnrelated": skipped_unrelated,
+        "skippedPreLaunch": skipped_prelaunch,
+        "pinned": 0,
+        "note": "Drafts are not map pins. Place is taken from the tweet text only. Nothing is accepted or pinned here.",
     }
     OUT.write_text(json.dumps({"summary": summary, "drafts": drafts}, indent=2, ensure_ascii=False), encoding="utf-8")
     print(json.dumps(summary, indent=2))

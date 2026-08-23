@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+"""Assert the X harvest obeyed the date cap and did not invent or pin."""
+
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+SCRIPTS = Path(__file__).resolve().parent
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
+from harvest_x import TARGET, is_after_launch  # noqa: E402
+
+ROOT = Path(__file__).resolve().parents[1]
+HARVEST = ROOT / "data" / "x-harvest"
+
+
+def main() -> int:
+    tweets_path = HARVEST / "tweets.jsonl"
+    drafts_path = HARVEST / "drafts.json"
+    summary_path = HARVEST / "summary.json"
+    if not tweets_path.exists():
+        print("missing tweets.jsonl")
+        return 1
+    rows = [json.loads(line) for line in tweets_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    ids = [row["id"] for row in rows]
+    errors: list[str] = []
+    if len(rows) > TARGET:
+        errors.append(f"fetched {len(rows)} > target {TARGET}")
+    if len(set(ids)) != len(ids):
+        errors.append("duplicate ids")
+    for row in rows:
+        if not row.get("id") or not row.get("url"):
+            errors.append(f"invented or incomplete row: {row!r}"[:200])
+            continue
+        if not is_after_launch(row.get("created_at"), row.get("id")):
+            errors.append(f"pre-launch {row.get('id')} {row.get('user')} {row.get('created_at')}")
+        if row.get("source") == "invented":
+            errors.append(f"invented flag on {row.get('id')}")
+    if drafts_path.exists():
+        payload = json.loads(drafts_path.read_text(encoding="utf-8"))
+        for draft in payload.get("drafts") or []:
+            status = draft.get("ingestStatus")
+            if status in {"accepted", "published"}:
+                errors.append(f"draft {draft.get('id')} was pinned as {status}")
+            if draft.get("sourceCreatedAt") and not is_after_launch(
+                draft.get("sourceCreatedAt"), draft.get("sourceId")
+            ):
+                errors.append(f"pre-launch draft {draft.get('id')}")
+        if payload.get("summary", {}).get("pinned"):
+            errors.append("drafts summary claims pins")
+    if summary_path.exists():
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        if summary.get("invented"):
+            errors.append("summary.invented is not 0")
+        if summary.get("fetched", 0) > TARGET:
+            errors.append("summary.fetched above target")
+    if errors:
+        print("FAIL")
+        for err in errors[:40]:
+            print(" -", err)
+        return 1
+    print(f"ok rows={len(rows)} unique={len(set(ids))} target={TARGET}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
